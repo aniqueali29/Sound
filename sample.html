@@ -2,26 +2,23 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Featured Album</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Video Section with Enlarged Card</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome for Play Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        body {
-            background-color: #000;
-            color: #fff;
-            font-family: 'Inter', Arial, sans-serif;
+        .videos-section {
+            padding: 80px 20px;
+            text-align: center;
+            background-color: #121212;
         }
 
-        .featured-section {
-            padding: 80px 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .section_subtitle {
-            color: #e74c3c;
+        .videos-section .section-subtitle {
+            color: #ff5252;
             font-size: 16px;
             text-transform: uppercase;
             letter-spacing: 3px;
@@ -29,552 +26,382 @@
             font-weight: 600;
         }
 
-        .section_title h1 {
-            color: #fff;
+        .videos-section .section-title {
             font-size: 42px;
             font-weight: 800;
-            margin: 0;
+            margin-bottom: 40px;
             letter-spacing: -1px;
             line-height: 1.2;
+            color: white !important;
         }
 
-        .featured_album_wrapper {
+        /* Video Grid Layout */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Video Card Styling */
+        .video-card {
             position: relative;
-            z-index: 2;
-        }
-
-
-        .featured_album_image {
-            position: absolute;
-            top: 52%;
-            right: 250px;
-            width: 600px;
-            height: 700px;
+            border: 2px solid transparent;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
-            transform: translateY(-50%);
+            transition: transform 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            height: 100%;
         }
 
-        .background_image {
+        .video-card:hover {
+            transform: scale(1.04);
+            border: 2px solid #ff5252;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #000;
+        }
+
+        .video-wrapper video {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center center;
-            transition: transform 0.5s ease;
-        }
-
-        .featured_album_image:hover .background_image {
-            transform: scale(1.05);
-        }
-
-        .featured_album_col {
-            background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 100%);
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            z-index: 1001;
-            position: relative;
-        }
-
-        .featured_album_artist {
-            font-size: 28px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 5px;
-            letter-spacing: -0.5px;
-        }
-
-        .featured_album_title {
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 25px;
-            font-weight: 500;
-        }
-
-        .featured_album_link a {
-            background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
-            color: #fff;
-            padding: 12px 24px;
-            text-decoration: none;
-            text-transform: uppercase;
-            font-size: 14px;
-            border-radius: 50px;
-            letter-spacing: 1.5px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-        }
-
-        .featured_album_link a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
-        }
-
-        .jp-playlist ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .jp-playlist li {
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            transition: background-color 0.3s ease;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .jp-playlist li:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .jp-playlist-item {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
+            object-fit: cover;
             display: block;
-            padding-right: 80px;
-            font-size: 16px;
-            transition: color 0.3s ease;
         }
 
-        .jp-playlist-current {
-            color: #e74c3c !important;
-            font-weight: 600;
-        }
-
-        .song_duration {
+        /* Modern Rating Styling */
+        .video-rating {
             position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.5);
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 20px;
+            padding: 8px 12px;
+            z-index: 3;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(0);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .video-card:hover .video-rating {
+            background: rgba(0, 0, 0, 0.8);
+            transform: translateY(3px);
+        }
+
+        .video-card:hover .rating-stars i {
+            transform: scale(1.1);
+        }
+
+        .rating-number {
+            color: white;
             font-size: 14px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff5252, #FFA41B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
         }
 
-        .jp-play {
-            background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
-            color: #fff;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
-        }
-
-        .jp-play:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
-        }
-
-        .jp-play::before {
-            content: "▶";
+        /* Overlay for Title and Subtitle */
+        .video-overlay {
             position: absolute;
-            top: 50%;
-            left: 55%;
-            transform: translate(-50%, -50%);
-            font-size: 16px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 15px 20px;
+            background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.9));
+            z-index: 2;
+            text-align: left;
         }
 
-        .jp-progress {
-            background-color: rgba(255, 255, 255, 0.1);
-            height: 6px;
-            width: 100%;
-            margin: 0 15px;
-            position: relative;
-            border-radius: 10px;
+        .video-overlay .video-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white !important;
+            line-height: 1.3;
             overflow: hidden;
-            cursor: pointer;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
-        .jp-seek-bar {
-            background-color: rgba(255, 255, 255, 0.1);
-            height: 100%;
-            width: 100%;
-            border-radius: 10px;
+        .video-overlay .video-channel {
+            margin: 4px 0 0;
+            font-size: 0.95rem;
+            opacity: 0.8;
+            color: white !important;
         }
 
-        .jp-play-bar {
-            background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
-            height: 100%;
-            position: relative;
-            border-radius: 10px;
-            transition: width 0.1s ease;
-        }
-
-        .time_controls {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            margin-top: 25px;
-            padding: 0 10px;
-        }
-
-        .jp-current-time,
-        .jp-duration {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-            min-width: 45px;
-        }
-
-        .player_now_playing {
-            margin-top: 25px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .now_playing_title {
-            margin-left: 20px;
-            flex-grow: 1;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .play_button_large {
-            background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
-            color: #fff;
-            border: none;
+        /* Play Icon Overlay */
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 60px;
             height: 60px;
+            background: rgba(255, 82, 82, 0.8);
             border-radius: 50%;
-            cursor: pointer;
-            font-size: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease, background 0.3s ease;
+            z-index: 2;
         }
 
-        .play_button_large:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+        .play-overlay i {
+            font-size: 24px;
+            color: white;
         }
 
-        .play-icon {
-            margin-right: 8px;
-            opacity: 0.5;
-            transition: opacity 0.3s ease;
-        }
-
-        .jp-playlist-item:hover .play-icon,
-        .jp-playlist-current .play-icon {
+        .video-card:hover .play-overlay {
             opacity: 1;
+            background: rgba(255, 82, 82, 0.9);
         }
 
-        .is-playing .play_button_large::before {
-            content: "❚❚";
-            font-size: 14px;
-            letter-spacing: -2px;
+        /* Loading state */
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            z-index: 3;
+            color: #fff;
+            font-size: 0.9rem;
         }
 
-        .play_button_large::before {
-            content: "▶";
-            position: relative;
-            left: 2px;
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .video-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .video-wrapper {
+                height: 350px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .videos-section {
+                padding: 60px 15px;
+            }
+
+            .videos-section .section-title {
+                font-size: 36px;
+                margin-bottom: 30px;
+            }
+
+            .video-grid {
+                gap: 20px;
+            }
+
+            .video-wrapper {
+                height: 320px;
+            }
         }
 
         @media (max-width: 768px) {
-            .featured-section {
-                padding: 60px 0;
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
 
-            .section_title h1 {
-                font-size: 32px;
-            }
-
-            .featured_album_col {
-                padding: 30px;
-            }
-
-            .featured_album_artist {
-                font-size: 24px;
-            }
-
-            .featured_album_image {
-                position: relative;
-                top: auto;
-                right: auto;
-                width: 100%;
+            .video-wrapper {
                 height: 300px;
-                transform: none;
-                margin-bottom: 30px;
+            }
+
+            .video-overlay .video-title {
+                font-size: 1.1rem;
+            }
+
+            .video-overlay .video-channel {
+                font-size: 0.85rem;
+            }
+
+            .play-overlay {
+                width: 50px;
+                height: 50px;
+            }
+
+            .play-overlay i {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .videos-section {
+                padding: 40px 10px;
+            }
+
+            .videos-section .section-title {
+                font-size: 30px;
+                margin-bottom: 25px;
+            }
+
+            .videos-section .section-subtitle {
+                font-size: 14px;
+                letter-spacing: 2px;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+                margin: 0 auto;
+                gap: 15px;
+            }
+
+            .video-wrapper {
+                height: 280px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="featured-section">
-        <div class="row justify-content-center">
-            <div class="col-lg-6">
-                <div class="section_title_container text-center" style="padding-bottom:120px;">
-                    <div class="section_subtitle">Events</div>
-                    <div class="section_title">
-                        <h1>Featured Album</h1>
+    <!-- Modern Video Section with Enlarged Card -->
+    <section class="videos-section">
+    <div class="container">
+        <div class="section-subtitle">Watch Now</div>
+        <h2 class="section-title">Latest Videos</h2>
+        <div class="video-grid">
+            <!-- Video Card 1 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <div class="loading">Loading...</div>
+                    <video class="video-preview" muted playsinline
+                        data-src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+                    <div class="play-overlay"><i class="fas fa-play"></i></div>
+                    <!-- Rating -->
+                    <div class="video-rating">
+                        <span class="rating-number">4.5/5</span>
+                    </div>
+                    <!-- Overlay with Title and Channel over video -->
+                    <div class="video-overlay">
+                        <p class="video-title">Epic Journey</p>
+                        <p class="video-channel">Channel One</p>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="container">
-            <div class="row featured_row mt-4">
-                <!-- Featured Album Player -->
-                <div class="col-md-6 order-md-1 featured_album_col">
-                    <div class="featured_album_player_container">
-                        <div class="featured_album_player">
-                            <div class="featured_album_title_bar d-flex flex-row align-items-center justify-content-between mb-4">
-                                <div class="featured_album_title_container">
-                                    <div class="featured_album_artist">Maria Smith</div>
-                                    <div class="featured_album_title">Love is all Around</div>
-                                </div>
-                                <div class="featured_album_link">
-                                    <a href="#">BUY IT ON ITUNES</a>
-                                </div>
-                            </div>
-
-                            <div class="jp-playlist">
-                                <ul>
-                                    <li data-song-id="1" data-duration="2:33">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item">
-                                                <span class="play-icon">▶</span> Better Days
-                                            </a>
-                                            <div class="song_duration">2:33</div>
-                                        </div>
-                                    </li>
-                                    <li data-song-id="2" data-duration="2:04">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item">
-                                                <span class="play-icon">▶</span> Dubstep
-                                            </a>
-                                            <div class="song_duration">2:04</div>
-                                        </div>
-                                    </li>
-                                    <li class="jp-playlist-current" data-song-id="3" data-duration="2:20">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item jp-playlist-current">
-                                                <span class="play-icon">▶</span> Sunny
-                                            </a>
-                                            <div class="song_duration">2:20</div>
-                                        </div>
-                                    </li>
-                                    <li data-song-id="4" data-duration="2:33">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item">
-                                                <span class="play-icon">▶</span> Better Days (Remix)
-                                            </a>
-                                            <div class="song_duration">2:33</div>
-                                        </div>
-                                    </li>
-                                    <li data-song-id="5" data-duration="2:04">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item">
-                                                <span class="play-icon">▶</span> Dubstep (Club Mix)
-                                            </a>
-                                            <div class="song_duration">2:04</div>
-                                        </div>
-                                    </li>
-                                    <li data-song-id="6" data-duration="2:20">
-                                        <div>
-                                            <a href="javascript:;" class="jp-playlist-item">
-                                                <span class="play-icon">▶</span> Sunny Day
-                                            </a>
-                                            <div class="song_duration">2:20</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div id="player_now_playing" class="player_now_playing">
-                                <div class="now_playing_title">
-                                    <div id="current_song_title">Sunny</div>
-                                </div>
-                                <div id="play_button" class="play_button_large"></div>
-                            </div>
-
-                            <div class="player_controls">
-                                <div class="time_controls d-flex">
-                                    <div id="jp-current-time" class="jp-current-time">00:00</div>
-                                    <div class="jp-progress">
-                                        <div class="jp-seek-bar">
-                                            <div id="jp-play-bar" class="jp-play-bar" style="width: 0%;"></div>
-                                        </div>
-                                    </div>
-                                    <div id="jp-duration" class="jp-duration">2:20</div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Video Card 2 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <div class="loading">Loading...</div>
+                    <video class="video-preview" muted playsinline
+                        data-src="https://www.w3schools.com/html/movie.mp4"></video>
+                    <div class="play-overlay"><i class="fas fa-play"></i></div>
+                    <!-- Rating -->
+                    <div class="video-rating">
+                        <span class="rating-number">3.6/5</span>
                     </div>
-                </div>
-
-                <!-- Featured Album Image -->
-                <div class="col-md-6 order-md-2">
-                    <div class="featured_album_image">
-                        <div class="background_image" style="background-image:url('./a12.jpg')">
-                        </div>
+                    <div class="video-overlay">
+                        <p class="video-title">Night Vibes</p>
+                        <p class="video-channel">Urban Beats</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+            <!-- Video Card 3 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <div class="loading">Loading...</div>
+                    <video class="video-preview" muted playsinline
+                        data-src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+                    <div class="play-overlay"><i class="fas fa-play"></i></div>
+                    <!-- Rating -->
+                    <div class="video-rating">
+                        <span class="rating-number">5.0/5</span>
+                    </div>
+                    <div class="video-overlay">
+                        <p class="video-title">Sky High</p>
+                        <p class="video-channel">Aerial Views</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Video Card 4 -->
+            <div class="video-card">
+                <div class="video-wrapper">
+                    <div class="loading">Loading...</div>
+                    <video class="video-preview" muted playsinline
+                        data-src="https://www.w3schools.com/html/movie.mp4"></video>
+                    <div class="play-overlay"><i class="fas fa-play"></i></div>
+                    <!-- Rating -->
+                    <div class="video-rating">
+                        <span class="rating-number">3.1/5</span>
+                    </div>
+                    <div class="video-overlay">
+                        <p class="video-title">Rhythm Pulse</p>
+                        <p class="video-channel">Beat Lab</p>
+                    </div>
+                </div>
+            </div>
+        </div><!-- End Video Grid -->
+    </div><!-- End Container -->
+</section>
 
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function () {
-            // Music player functionality
-            let isPlaying = false;
-            let currentSongId = 3; // Default to the third song (Sunny)
-            let currentTime = 0;
-            let duration = 140; // Default duration in seconds (2:20)
-            let progressInterval;
-            let currentSongTitle = "Sunny";
+        // Load videos and generate thumbnails from the videos themselves
+        const videoCards = document.querySelectorAll('.video-card');
 
-            // Initialize player
-            updateNowPlaying(currentSongTitle);
-            updateDuration("2:20");
+        videoCards.forEach(card => {
+            const video = card.querySelector('.video-preview');
+            const loadingIndicator = card.querySelector('.loading');
+            const dataSrc = video.getAttribute('data-src');
 
-            // Play button click handler
-            $("#play_button").on("click", function () {
-                togglePlayState();
+            // Set the actual source
+            video.src = dataSrc;
+
+            // When metadata is loaded, we can seek to a position to create a thumbnail
+            video.addEventListener('loadedmetadata', () => {
+                // Seek to a position in the video (e.g., 25% through)
+                // This will be used as our thumbnail
+                video.currentTime = video.duration * 0.25;
             });
 
-            // Song selection handler
-            $(".jp-playlist li").on("click", function () {
-                const songId = $(this).data("song-id");
-                const songDuration = $(this).data("duration");
-                const songTitle = $(this).find(".jp-playlist-item").text().trim().replace("▶", "").trim();
-
-                // Update current song
-                currentSongId = songId;
-                currentSongTitle = songTitle;
-                duration = convertToSeconds(songDuration);
-
-                // Update UI
-                $(".jp-playlist-item").removeClass("jp-playlist-current");
-                $(this).find(".jp-playlist-item").addClass("jp-playlist-current");
-                updateNowPlaying(songTitle);
-                updateDuration(songDuration);
-
-                // Reset progress
-                resetProgress();
-
-                // Start playing
-                if (!isPlaying) {
-                    togglePlayState();
-                }
+            // Once we've seeked to the position, the video shows that frame
+            video.addEventListener('seeked', () => {
+                // Remove loading indicator
+                loadingIndicator.style.display = 'none';
             });
 
-            // Progress bar click handler
-            $(".jp-progress").on("click", function (e) {
-                const progressWidth = $(this).width();
-                const clickPosition = e.pageX - $(this).offset().left;
-                const percentClicked = (clickPosition / progressWidth) * 100;
-
-                // Update progress bar
-                $("#jp-play-bar").css("width", percentClicked + "%");
-
-                // Update current time
-                currentTime = Math.floor((percentClicked / 100) * duration);
-                $("#jp-current-time").text(formatTime(currentTime));
+            // Handle errors
+            video.addEventListener('error', () => {
+                loadingIndicator.textContent = 'Error loading video';
             });
 
-            // Helper functions
-            function togglePlayState() {
-                isPlaying = !isPlaying;
+            // On hover, play the video
+            card.addEventListener('mouseenter', () => {
+                video.play();
+            });
 
-                if (isPlaying) {
-                    // Start progress
-                    $("#player_now_playing").addClass("is-playing");
-                    startProgress();
-                } else {
-                    // Pause progress
-                    $("#player_now_playing").removeClass("is-playing");
-                    clearInterval(progressInterval);
-                }
-            }
-
-            function startProgress() {
-                // Clear any existing interval
-                clearInterval(progressInterval);
-
-                // Start new interval
-                progressInterval = setInterval(function () {
-                    currentTime++;
-
-                    if (currentTime >= duration) {
-                        // End of song
-                        currentTime = 0;
-                        clearInterval(progressInterval);
-                        isPlaying = false;
-                        $("#player_now_playing").removeClass("is-playing");
-                    }
-
-                    // Update progress bar
-                    const percentComplete = (currentTime / duration) * 100;
-                    $("#jp-play-bar").css("width", percentComplete + "%");
-
-                    // Update time display
-                    $("#jp-current-time").text(formatTime(currentTime));
-                }, 1000);
-            }
-
-            function resetProgress() {
-                currentTime = 0;
-                $("#jp-play-bar").css("width", "0%");
-                $("#jp-current-time").text("00:00");
-                clearInterval(progressInterval);
-            }
-
-            function updateNowPlaying(title) {
-                $("#current_song_title").text(title);
-            }
-
-            function updateDuration(time) {
-                $("#jp-duration").text(time);
-            }
-
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                seconds = seconds % 60;
-                return (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-            }
-
-            function convertToSeconds(timeString) {
-                const parts = timeString.split(":");
-                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-            }
-
-            // Visual effects
-            $(".featured_album_image").hover(
-                function () {
-                    $(this).find(".background_image").css("transform", "scale(1.05)");
-                },
-                function () {
-                    $(this).find(".background_image").css("transform", "scale(1)");
-                }
-            );
-
-            // Button hover effects
-            $(".featured_album_link a, .play_button_large").hover(
-                function () {
-                    $(this).css("transform", "translateY(-2px)");
-                },
-                function () {
-                    $(this).css("transform", "translateY(0)");
-                }
-            );
+            // On mouse leave, pause and reset the video to thumbnail position
+            card.addEventListener('mouseleave', () => {
+                video.pause();
+                // Reset to thumbnail position, not beginning
+                video.currentTime = video.duration * 0.25;
+            });
         });
     </script>
 </body>

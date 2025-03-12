@@ -2710,30 +2710,710 @@ img {
 
 @media (max-width: 768px) {
   .featured-section {
-      padding: 60px 0;
+    padding: 60px 0;
   }
 
   .section_title h1 {
-      font-size: 32px;
+    font-size: 32px;
   }
 
   .featured_album_col {
-      padding: 30px;
+    padding: 30px;
   }
 
   .featured_album_artist {
-      font-size: 24px;
+    font-size: 24px;
   }
 
   .featured_album_image {
-      position: relative;
-      top: auto;
-      right: auto;
-      width: 100%;
-      height: 300px;
-      transform: none;
-      margin-bottom: 30px;
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    height: 300px;
+    transform: none;
+    margin-bottom: 30px;
   }
 }
 
 /* ================================= Featured Albums End ================================ */
+
+
+/* ================================= Video Section Start ================================ */
+.video-section {
+  width: 100%;
+  max-width: 1200px;
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+  color: white;
+}
+
+.section_title_container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.section_subtitle {
+  color: #e74c3c;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.section_title h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+
+/* Layout for the video player and playlist */
+.video-player-col,
+.video-playlist-col {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.video-playlist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.video-playlist li {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  font-family: "Archivo Narrow", sans-serif !important;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.video-playlist li:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.video-playlist li.active {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+/* Custom Video Player Styles */
+.custom-video-container {
+  position: relative;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-video-container video {
+  width: 100%;
+  display: block;
+}
+
+/* Hide default controls */
+.custom-video-container video::-internal-media-controls-overlay-cast-button,
+.custom-video-container video::-webkit-media-controls,
+.custom-video-container video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+/* Custom controls overlay */
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+
+.video-controls button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.progress-container {
+  flex-grow: 1;
+  margin: 0 15px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
+  transition: width 0.1s linear;
+}
+
+.time-display {
+  font-size: 14px;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Volume controls placed at the end, matching design */
+.volume-controls {
+  display: flex;
+  align-items: center;
+  margin-left: 15px;
+}
+
+.volume-controls input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.volume-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #e74c3c 0%, #ff6b6b 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+
+  .video-player-col,
+  .video-playlist-col {
+    margin-bottom: 20px;
+  }
+
+  .section_title h1 {
+    font-size: 32px;
+  }
+
+  .video-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .progress-container {
+    margin: 10px 0;
+  }
+
+  .volume-controls {
+    justify-content: center;
+    margin: 10px 0 0 0;
+  }
+}
+
+/* ================================= Video Section End ================================ */
+
+
+/* ================================= Latest Album Section Start ================================ */
+
+
+.albums-section {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.albums-section .section-subtitle {
+  color: #e74c3c;
+  /* Highlight color */
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.albums-section .section-title {
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  color: white;
+}
+
+.albums-section .section-description {
+  max-width: 700px;
+  margin: 0 auto 50px auto;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Album Grid */
+.album-card {
+  background-color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.album-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.album-image {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.album-info {
+  padding: 15px;
+}
+
+.album-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.album-artist {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0;
+}
+
+/* Hover Overlay (optional) */
+.album-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0) 0%, rgba(231, 76, 60, 0.3) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.album-card:hover::before {
+  opacity: 1;
+}
+
+/* Responsive Tweaks */
+@media (max-width: 768px) {
+  .albums-section .section-title {
+    font-size: 32px;
+  }
+
+  .album-image {
+    height: 220px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .albums-section {
+    padding: 60px 15px;
+  }
+}
+
+/* Media Query for screens up to 992px */
+@media (max-width: 992px) {
+  .album-info {
+    padding: 8px;
+  }
+
+  .video-rating {
+    top: 10px;
+    left: 10px;
+    padding: 6px 10px;
+  }
+
+  .album-card {
+    flex-wrap: wrap;
+  }
+
+  .rating-number {
+    font-size: 13px;
+  }
+}
+
+/* Media Query for screens up to 768px */
+@media (max-width: 768px) {
+  .albums-section {
+    padding: 50px 10px;
+  }
+
+  .album-info {
+    padding: 6px;
+  }
+
+  .album-card {
+    flex-direction: column !important;
+    width: 100%;
+    max-width: 300px !important;
+    margin-bottom: 25px !important;
+    margin: 0 auto;
+  }
+
+  .video-rating {
+    top: 8px;
+    left: 8px;
+    padding: 5px 8px;
+  }
+
+  .rating-number {
+    font-size: 12px;
+  }
+}
+
+
+/* Media Query for screens up to 576px */
+
+@media (max-width: 576px) {
+  .alb-row {
+    display: block;
+  }
+
+  .albums-section {
+    padding: 40px 5px;
+  }
+
+  .albums-section .section-title {
+    font-size: 28px;
+  }
+
+  .albums-section .section-subtitle {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .albums-section .section-description {
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+
+  .album-image {
+    height: 180px;
+  }
+
+  .album-info {
+    padding: 8px;
+  }
+
+  .video-rating {
+    top: 5px;
+    left: 5px;
+    padding: 4px 6px;
+  }
+
+  .rating-number {
+    font-size: 11px;
+  }
+
+  /* If you're using flex wrapping on album cards, force a single column if needed */
+  .album-card {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 25px !important;
+    margin: 0 auto;
+  }
+}
+
+
+/* ================================= Latest Album Section End ================================ */
+
+
+/* ================================= Latest Video  Start ================================ */
+
+.videos-section {
+  padding: 80px 20px;
+  text-align: center;
+  background-color: #121212;
+}
+
+.videos-section .section-subtitle {
+  color: #ff5252;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.videos-section .section-title {
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 40px;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  color: white !important;
+}
+
+/* Video Grid Layout */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Video Card Styling */
+.video-card {
+  position: relative;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  height: 100%;
+}
+
+.video-card:hover {
+  transform: scale(1.04);
+  border: 2px solid #ff5252;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  /* Changed from aspect-ratio to fixed height */
+  height: 400px;
+  background: #000;
+}
+
+.video-wrapper video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Overlay for Title and Subtitle */
+.video-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 15px 20px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.9));
+  z-index: 2;
+  text-align: left;
+}
+
+.video-overlay .video-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white !important;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.video-overlay .video-channel {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+  color: white !important;
+}
+
+/* Play Icon Overlay */
+.play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 82, 82, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease, background 0.3s ease;
+  z-index: 2;
+}
+
+.play-overlay i {
+  font-size: 24px;
+  color: white;
+}
+
+.video-card:hover .play-overlay {
+  opacity: 1;
+  background: rgba(255, 82, 82, 0.9);
+}
+
+/* Loading state */
+.loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  z-index: 3;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .video-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .video-wrapper {
+    height: 350px;
+  }
+}
+
+@media (max-width: 992px) {
+  .videos-section {
+    padding: 60px 15px;
+  }
+
+  .videos-section .section-title {
+    font-size: 36px;
+    margin-bottom: 30px;
+  }
+
+  .video-grid {
+    gap: 20px;
+  }
+
+  .video-wrapper {
+    height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .video-wrapper {
+    height: 300px;
+  }
+
+  .video-overlay .video-title {
+    font-size: 1.1rem;
+  }
+
+  .video-overlay .video-channel {
+    font-size: 0.85rem;
+  }
+
+  .play-overlay {
+    width: 50px;
+    height: 50px;
+  }
+
+  .play-overlay i {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .videos-section {
+    padding: 40px 10px;
+  }
+
+  .videos-section .section-title {
+    font-size: 30px;
+    margin-bottom: 25px;
+  }
+
+  .videos-section .section-subtitle {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .video-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin: 0 auto;
+    gap: 15px;
+  }
+
+  .video-wrapper {
+    height: 280px;
+  }
+}
+
+.video-rating {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  border-radius: 20px;
+  padding: 8px 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transform: translateY(0);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.video-card:hover .video-rating {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(3px);
+}
+
+.video-card:hover .rating-stars i {
+  transform: scale(1.1);
+}
+
+.rating-number {
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  background: linear-gradient(45deg, #ff5252, #FFA41B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+
+
+/* ================================= Latest Video  End ================================ */
