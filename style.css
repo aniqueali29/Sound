@@ -501,61 +501,25 @@ img {
 .header-area .oneMusic-main-menu .classy-nav-container {
   background-color: transparent;
 }
-/* Center Navbar */
+
 .header-area .oneMusic-main-menu .classy-navbar {
   background-color: transparent;
   height: 85px;
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Centers the navbar */
 }
 
-/* Center the menu items */
-.header-area .oneMusic-main-menu .classy-navbar .classynav ul {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+@media only screen and (max-width: 767px) {
+  .header-area .oneMusic-main-menu .classy-navbar {
+    height: 70px;
+  }
 }
 
-/* Center the navbar items */
-.header-area .oneMusic-main-menu .classy-navbar .classynav ul li {
-  list-style: none;
-  margin: 0 15px; /* Adjust spacing between menu items */
-}
-
-/* Navbar Links */
 .header-area .oneMusic-main-menu .classy-navbar .classynav ul li a {
   font-weight: 700;
   text-transform: capitalize;
   color: #ffffff;
   font-size: 16px;
-  padding: 10px 15px;
-  display: block;
 }
-
-/* On Hover */
-.header-area .oneMusic-main-menu .classy-navbar .classynav ul li a:hover {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Responsive Centering */
-@media only screen and (max-width: 991px) {
-  .header-area .oneMusic-main-menu .classy-navbar {
-      flex-direction: column;
-      align-items: center;
-  }
-
-  .header-area .oneMusic-main-menu .classy-navbar .classynav ul {
-      flex-direction: column;
-      text-align: center;
-  }
-
-  .header-area .oneMusic-main-menu .classy-navbar .classynav ul li {
-      margin: 10px 0;
-  }
-}
-
 
 .header-area .oneMusic-main-menu .classy-navbar .classynav ul li a:hover,
 .header-area .oneMusic-main-menu .classy-navbar .classynav ul li a:focus {
@@ -768,6 +732,7 @@ img {
 .classycloseIcon .cross-wrap span {
   background: #ffffff;
 }
+
 
 /* :: 5.0 Hero Slides Area */
 .hero-area,
