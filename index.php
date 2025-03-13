@@ -182,7 +182,7 @@
                     <nav class="classy-navbar justify-content-between" id="oneMusicNav">
 
                         <!-- Nav brand -->
-                        <a href="index.html" class="nav-brand"><img src="img/core-img/logo.png" alt=""></a>
+                        <a href="index.php" class="nav-brand"><img src="img/core-img/logo.png" alt=""></a>
 
                         <!-- Navbar Toggler -->
                         <div class="classy-navbar-toggler">
@@ -200,17 +200,16 @@
                             <!-- Nav Start -->
                             <div class="classynav">
                                 <ul>
-                                    <li><a href="index.html">Home</a></li>
-                                    <li><a href="albums-store.html">Albums</a></li>
-                                    <li><a href="#">Pages</a>
+                                    <li><a href="index.php">Home</a></li>
+                                    <!-- <li><a href="#">Pages</a>
                                         <ul class="dropdown">
-                                            <li><a href="index.html">Home</a></li>
-                                            <li><a href="albums-store.html">Albums</a></li>
-                                            <li><a href="event.html">Events</a></li>
-                                            <li><a href="blog.html">News</a></li>
-                                            <li><a href="contact.html">Contact</a></li>
-                                            <li><a href="elements.html">Elements</a></li>
-                                            <li><a href="login.html">Login</a></li>
+                                            <li><a href="index.php">Home</a></li>
+                                            <li><a href="albums-store.php">Albums</a></li>
+                                            <li><a href="event.php">Events</a></li>
+                                            <li><a href="blog.php">News</a></li>
+                                            <li><a href="contact.php">Contact</a></li>
+                                            <li><a href="elements.php">Elements</a></li>
+                                            <li><a href="login.php">Login</a></li>
                                             <li><a href="#">Dropdown</a>
                                                 <ul class="dropdown">
                                                     <li><a href="#">Even Dropdown</a></li>
@@ -229,17 +228,18 @@
                                                 </ul>
                                             </li>
                                         </ul>
-                                    </li>
-                                    <li><a href="event.html">Events</a></li>
-                                    <li><a href="blog.html">News</a></li>
-                                    <li><a href="contact.html">Contact</a></li>
+                                    </li> -->
+                                    <li><a href="event.php">Music</a></li>
+                                    <li><a href="albums-store.php">Albums</a></li>
+                                    <li><a href="blog.php">Video</a></li>
+                                    <!-- <li><a href="contact.php">Contact</a></li> -->
                                 </ul>
 
                                 <!-- Login/Register & Cart Button -->
                                 <div class="login-register-cart-button d-flex align-items-center">
                                     <!-- Login/Register -->
                                     <div class="login-register-btn mr-50">
-                                        <a href="login.html" id="loginBtn">Login / Register</a>
+                                        <a href="login.php" id="loginBtn">Login / Register</a>
                                     </div>
 
                                     <!-- Cart Button -->
@@ -263,27 +263,27 @@
             <!-- Navigation Links -->
             <ul class="nav-links">
                 <li class="nav-item active">
-                    <a href="./index.html">
+                    <a href="./index.php">
                         <i class="fa-solid fa-house"></i>
                         <span>Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="./about.html">
-                        <i class="fa-solid fa-user"></i>
-                        <span>About</span>
+                    <a href="./pages/music.php">
+                    <i class="fa-solid fa-music"></i>
+                        <span>Music</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="./my_work.html">
-                        <i class="fa-solid fa-briefcase"></i>
-                        <span>Works</span>
+                    <a href="./pages/video.php">
+                    <i class="fa-solid fa-video"></i>
+                        <span>Video</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="./contact.html">
-                        <i class="fa-solid fa-bolt"></i>
-                        <span>Contact</span>
+                    <a href="./pages/albums.php">
+                    <i class="fa-solid fa-record-vinyl"></i>
+                        <span>Albums</span>
                     </a>
                 </li>
             </ul>
