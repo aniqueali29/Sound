@@ -1,4 +1,146 @@
-<?php include '../layout/header.php'; ?>
+<?php
+// Include database connection
+include '../includes/config_db.php'; // Make sure this file exists with DB connection
+
+// Get filters from URL parameters
+$album_filter = isset($_GET['album']) ? $_GET['album'] : '';
+$artist_filter = isset($_GET['artist']) ? $_GET['artist'] : '';
+$year_filter = isset($_GET['year']) ? $_GET['year'] : '';
+$genre_filter = isset($_GET['genre']) ? $_GET['genre'] : '';
+$language_filter = isset($_GET['language']) ? $_GET['language'] : '';
+$search_query = isset($_GET['search']) ? $_GET['search'] : '';
+
+// Base query to fetch music with all necessary joins
+$sql = "SELECT m.id, m.title, m.file_path, m.duration, m.release_year, m.plays, m.likes, 
+               m.is_new, m.is_featured,
+               a.name AS artist_name, a.image AS artist_image,
+               al.title AS album_title, al.cover_image,
+               g.name AS genre_name,
+               l.name AS language_name
+        FROM music m
+        INNER JOIN artists a ON m.artist_id = a.id
+        LEFT JOIN albums al ON m.album_id = al.id
+        LEFT JOIN genres g ON m.genre_id = g.id
+        LEFT JOIN languages l ON m.language_id = l.id
+        WHERE m.deleted_at IS NULL";
+
+// Add filters if provided
+$params = array();
+
+if (!empty($album_filter)) {
+    $sql .= " AND al.title LIKE ?";
+    $params[] = "%$album_filter%";
+}
+
+if (!empty($artist_filter)) {
+    $sql .= " AND a.name LIKE ?";
+    $params[] = "%$artist_filter%";
+}
+
+if (!empty($year_filter)) {
+    $sql .= " AND m.release_year = ?";
+    $params[] = $year_filter;
+}
+
+if (!empty($genre_filter)) {
+    $sql .= " AND g.name LIKE ?";
+    $params[] = "%$genre_filter%";
+}
+
+if (!empty($language_filter)) {
+    $sql .= " AND l.name LIKE ?";
+    $params[] = "%$language_filter%";
+}
+
+if (!empty($search_query)) {
+    $sql .= " AND (m.title LIKE ? OR a.name LIKE ? OR al.title LIKE ?)";
+    $params[] = "%$search_query%";
+    $params[] = "%$search_query%";
+    $params[] = "%$search_query%";
+}
+
+// Add order by clause
+$sql .= " ORDER BY m.created_at DESC";
+
+// Prepare and execute the statement
+$stmt = $conn->prepare($sql);
+
+// Bind parameters if any
+if (!empty($params)) {
+    $types = str_repeat('s', count($params)); // Assuming all params are strings
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+$music_items = $result->fetch_all(MYSQLI_ASSOC);
+
+// Get all albums for the filter dropdowns
+$sql_albums = "SELECT DISTINCT a.title, a.id FROM albums a WHERE a.deleted_at IS NULL ORDER BY a.title";
+$result_albums = $conn->query($sql_albums);
+$albums = $result_albums->fetch_all(MYSQLI_ASSOC);
+
+// Get all artists
+$sql_artists = "SELECT DISTINCT a.name, a.id FROM artists a WHERE a.deleted_at IS NULL ORDER BY a.name";
+$result_artists = $conn->query($sql_artists);
+$artists = $result_artists->fetch_all(MYSQLI_ASSOC);
+
+// Get all genres
+$sql_genres = "SELECT id, name FROM genres ORDER BY name";
+$result_genres = $conn->query($sql_genres);
+$genres = $result_genres->fetch_all(MYSQLI_ASSOC);
+
+// Get all languages
+$sql_languages = "SELECT id, name FROM languages ORDER BY name";
+$result_languages = $conn->query($sql_languages);
+$languages = $result_languages->fetch_all(MYSQLI_ASSOC);
+
+// Get all years
+$sql_years = "SELECT DISTINCT release_year FROM music WHERE deleted_at IS NULL ORDER BY release_year DESC";
+$result_years = $conn->query($sql_years);
+$years = $result_years->fetch_all(MYSQLI_ASSOC);
+
+// If no music found, insert demo data if database is empty
+if (count($music_items) == 0 && !isset($_GET['noinsert'])) {
+    // Insert demo artists if they don't exist
+
+    // Get artist IDs
+    $stmt = $conn->prepare("SELECT id, name FROM artists WHERE name IN (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $demo_artists[0][0], $demo_artists[1][0], $demo_artists[2][0], $demo_artists[3][0], $demo_artists[4][0]);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $artist_ids = [];
+    while ($row = $result->fetch_assoc()) {
+        $artist_ids[$row['name']] = $row['id'];
+    }
+    
+    // Get genre IDs
+    $rock_id = $conn->query("SELECT id FROM genres WHERE name = 'Rock'")->fetch_assoc()['id'];
+    $rnb_id = $conn->query("SELECT id FROM genres WHERE name = 'R&B'")->fetch_assoc()['id'];
+    $pop_id = $conn->query("SELECT id FROM genres WHERE name = 'Pop'")->fetch_assoc()['id'];
+    
+    // Get language IDs
+    $english_id = $conn->query("SELECT id FROM languages WHERE name = 'English'")->fetch_assoc()['id'];
+    $hindi_id = $conn->query("SELECT id FROM languages WHERE name = 'Hindi'")->fetch_assoc()['id'];
+    
+    
+    // Get album IDs
+    $stmt = $conn->prepare("SELECT id, title FROM albums WHERE title IN (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $demo_albums[0][0], $demo_albums[1][0], $demo_albums[2][0], $demo_albums[3][0], $demo_albums[4][0], $demo_albums[5][0], $demo_albums[6][0]);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $album_ids = [];
+    while ($row = $result->fetch_assoc()) {
+        $album_ids[$row['title']] = $row['id'];
+    }
+    
+    // Refresh the page to load the new data
+    header("Location: ?noinsert=1");
+    exit;
+}
+include '../layout/header.php';
+
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,628 +154,11 @@
     <!-- Google Fonts for modern typography -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-        integrity="sha512-..." crossorigin="anonymous">
-    <style>
-    :root {
-        --neon-green: #0ff47a;
-        --deep-space: #0a0a14;
-        --stellar-purple: #6c43f5;
-        --cosmic-pink: #ff3b8d;
-        --holographic-gradient: linear-gradient(45deg, var(--neon-green), var(--stellar-purple));
-    }
-
-    .navbar {
-        position: fixed;
-        top: 2rem;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1000;
-        width: auto;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.5s ease;
-        z-index: 10012;
-    }
-
-    .nav-container {
-        background: rgba(18, 18, 18, 0.8);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 3rem;
-        padding: 0.75rem 1rem;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .nav-links {
-        display: flex;
-        gap: 1rem;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .nav-item {
-        position: relative;
-    }
-
-    .nav-item a {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        text-decoration: none;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1rem;
-        padding: 0.75rem 1.25rem;
-        border-radius: 2rem;
-        transition: all 0.3s ease;
-    }
-
-    .nav-item.active a,
-    .nav-item:hover a {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.2);
-    }
-
-    /* Icons classes */
-    .fa-solid {
-        width: 20px;
-        height: 20px;
-        display: inline-block;
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        filter: brightness(0) invert(1);
-        opacity: 0.7;
-        transition: opacity 0.3s ease;
-    }
-
-    .fa-house {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath d='M575.8 255.5c0 18-15 32.1-32 32.1l-32 0 .7 160.2c0 2.7-.2 5.4-.5 8.1l0 16.2c0 22.1-17.9 40-40 40l-16 0c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1L416 512l-24 0c-22.1 0-40-17.9-40-40l0-24 0-64c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32 14.3-32 32l0 64 0 24c0 22.1-17.9 40-40 40l-24 0-31.9 0c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2l-16 0c-22.1 0-40-17.9-40-40l0-112c0-.9 0-1.9 .1-2.8l0-69.7-32 0c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z'/%3E%3C/svg%3E");
-    }
-
-    .fa-user {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z'/%3E%3C/svg%3E");
-    }
-
-    .fa-briefcase {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M184 48l144 0c4.4 0 8 3.6 8 8l0 40L176 96l0-40c0-4.4 3.6-8 8-8zm-56 8l0 40L64 96C28.7 96 0 124.7 0 160l0 96 192 0 128 0 192 0 0-96c0-35.3-28.7-64-64-64l-64 0 0-40c0-30.9-25.1-56-56-56L184 0c-30.9 0-56 25.1-56 56zM512 288l-192 0 0 32c0 17.7-14.3 32-32 32l-64 0c-17.7 0-32-14.3-32-32l0-32L0 288 0 416c0 35.3 28.7 64 64 64l384 0c35.3 0 64-28.7 64-64l0-128z'/%3E%3C/svg%3E");
-    }
-
-    .fa-bolt {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288l111.5 0L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7l-111.5 0L349.4 44.6z'/%3E%3C/svg%3E");
-    }
-
-    .nav-item.active .fa-solid,
-    .nav-item:hover .fa-solid {
-        opacity: 1;
-    }
-
-
-
-    /* Responsive Styles for second navbar */
-    @media (max-width: 768px) {
-        .navbar {
-            top: 1.5rem;
-        }
-
-        .nav-container {
-            padding: 0.6rem 0.8rem;
-        }
-
-        .nav-item a {
-            font-size: 0.9rem;
-            padding: 0.6rem 1rem;
-        }
-
-        .fa-solid {
-            width: 16px;
-            height: 16px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .nav-container {
-            padding: 0.4rem 0.2rem;
-        }
-
-        .nav-links {
-            gap: 0.5rem;
-        }
-
-        .nav-item a {
-            font-size: 0.6rem;
-            padding: 0.4rem 0.7rem;
-        }
-
-        .fa-solid {
-            width: 12px;
-            height: 12px;
-        }
-    }
-
-    body {
-        background: var(--deep-space);
-        color: #fff;
-        font-family: 'Space Grotesk', sans-serif;
-        min-height: 100vh;
-        overflow-x: hidden;
-        margin: 0;
-        padding: 0;
-    }
-
-    .particles {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-        top: 0;
-        left: 0;
-    }
-
-    /* Header */
-    .stellar-header {
-        position: relative;
-        text-align: center;
-        padding: 4rem 0;
-        overflow: hidden;
-    }
-
-    .stellar-header h1 {
-        font-size: 4rem;
-        background: var(--holographic-gradient);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 30px rgba(15, 244, 122, 0.3);
-        animation: text-glow 2s ease-in-out infinite alternate;
-        margin-bottom: 0.5rem;
-    }
-
-    .stellar-header p {
-        font-size: 1.5rem;
-        color: #ccc;
-    }
-
-    @keyframes text-glow {
-        from {
-            text-shadow: 0 0 10px rgba(15, 244, 122, 0.3);
-        }
-
-        to {
-            text-shadow: 0 0 40px rgba(15, 244, 122, 0.6);
-        }
-    }
-
-    .filter-icon {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        width: 60px;
-        height: 60px;
-        background-color: rgba(255, 255, 255, 0.1);
-        /* Subtle dark background */
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 0 10px rgba(0, 255, 170, 0.4);
-        cursor: pointer;
-        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s ease-in-out;
-    }
-
-    .filter-icon:hover {
-        transform: scale(1.1);
-        background-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 0 20px rgba(0, 255, 170, 0.8);
-    }
-
-    .filter-icon svg {
-        width: 32px;
-        height: 32px;
-        fill: #00ffaa;
-        /* Neon cyan-green for dark theme */
-        transition: transform 0.3s ease-in-out, filter 0.3s ease-in-out;
-    }
-
-    .filter-icon:hover svg {
-        transform: scale(1.2);
-        filter: drop-shadow(0 0 5px #00ffaa);
-    }
-
-    .pulse {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 255, 170, 0.2);
-        border-radius: 50%;
-        animation: pulseAnimation 1.5s infinite ease-in-out;
-    }
-
-    @keyframes pulseAnimation {
-        0% {
-            transform: scale(1);
-            opacity: 0.6;
-        }
-
-        50% {
-            transform: scale(1.5);
-            opacity: 0.2;
-        }
-
-        100% {
-            transform: scale(2);
-            opacity: 0;
-        }
-    }
-
-
-
-    /* Offcanvas Filter Section for Mobile */
-    .offcanvas {
-        background: var(--deep-space);
-        color: #fff;
-    }
-
-    .offcanvas .offcanvas-header,
-    .offcanvas .offcanvas-body {
-        border: none;
-    }
-
-    /* Desktop Filter Section */
-    .hologram-filter {
-        background: rgba(15, 15, 30, 0.6);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 24px;
-        box-shadow: 0 0 40px rgba(15, 244, 122, 0.1);
-        padding: 2rem;
-        margin: 2rem auto;
-        max-width: 1400px;
-        position: relative;
-    }
-
-    .hologram-filter::before {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        background: var(--holographic-gradient);
-        z-index: -1;
-        border-radius: 24px;
-        animation: hologram-border 6s linear infinite;
-    }
-
-    @keyframes hologram-border {
-        0% {
-            opacity: 0.5;
-        }
-
-        50% {
-            opacity: 1;
-        }
-
-        100% {
-            opacity: 0.5;
-        }
-    }
-
-    .filter-section {
-        margin: 2rem 0;
-        padding: 2rem;
-        background: rgba(20, 20, 30, 0.7);
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .filter-options {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .filter-options select {
-        padding: 0.75rem 1rem;
-        background-color: #1c1c24;
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        min-width: 150px;
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='292.4' height='292.4'%3E%3Cpath fill='%23fff' d='M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 0.65rem auto;
-        transition: all 0.3s ease;
-    }
-
-    .filter-options select:hover {
-        background-color: #2a2a2a;
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .filter-options select:focus {
-        outline: none;
-        border-color: var(--neon-green);
-        box-shadow: 0 0 0 2px rgba(15, 244, 122, 0.3);
-    }
-
-    .search-bar {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .search-bar input {
-        padding: 0.75rem 1rem;
-        background-color: #1c1c24;
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        flex-grow: 1;
-        transition: all 0.3s ease;
-    }
-
-    .search-bar input:hover {
-        background-color: #2a2a2a;
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .search-bar input:focus {
-        outline: none;
-        border-color: var(--neon-green);
-        box-shadow: 0 0 0 2px rgba(15, 244, 122, 0.3);
-        background-color: #2a2a2a;
-    }
-
-    .search-bar input::placeholder {
-        color: #aaa;
-    }
-
-    .search-bar button {
-        padding: 0.75rem 1.5rem;
-        background-color: var(--neon-green);
-        color: #000;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .search-bar button:hover {
-        background-color: #0dc66b;
-        transform: translateY(-2px);
-    }
-
-    /* Album Grid */
-    .album-grid {
-        margin: 2rem 0;
-    }
-
-    /* Card (No Tilt) */
-    .quantum-card {
-        background: rgba(20, 20, 30, 0.9);
-        border-radius: 20px;
-        padding: 1.5rem;
-        transition: transform 0.4s ease, box-shadow 0.4s ease;
-        position: relative;
-        overflow: hidden;
-        cursor: pointer;
-    }
-
-    .quantum-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .quantum-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 200%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(15, 244, 122, 0.1), transparent);
-        transition: 0.6s;
-    }
-
-    .quantum-card:hover::before {
-        left: 100%;
-    }
-
-    /* Card Image and Centered Play Button */
-    .card-image-container {
-        position: relative;
-        overflow: hidden;
-        height: 220px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .card-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-
-    .card-image-container::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 50%;
-        background: linear-gradient(to top, rgba(18, 18, 18, 1), transparent);
-        pointer-events: none;
-    }
-
-    .morph-play {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        background: var(--neon-green);
-        border-radius: 50%;
-        opacity: 0;
-        transition: all 0.4s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 0 30px rgba(15, 244, 122, 0.5);
-        z-index: 2;
-    }
-
-    .quantum-card:hover .morph-play {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.1);
-    }
-
-    /* Card Information */
-    .card-info {
-        padding: 1.25rem;
-        position: relative;
-    }
-
-    .card-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        transition: color 0.3s ease;
-        color: #e0e0e0;
-    }
-
-    .quantum-card:hover .card-title {
-        color: var(--neon-green);
-    }
-
-    .card-artist {
-        font-size: 0.95rem;
-        color: #aaa;
-        margin-bottom: 0.75rem;
-    }
-
-    .card-meta {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: #888;
-        align-items: center;
-    }
-
-    .card-rating {
-        color: #ffc107;
-        display: flex;
-        gap: 2px;
-        font-size: 0.9rem;
-    }
-
-    .genre-tag {
-        display: inline-block;
-        padding: 0.2rem 0.5rem;
-        background: rgba(29, 185, 84, 0.2);
-        color: var(--neon-green);
-        border-radius: 4px;
-        font-size: 0.75rem;
-        margin-right: 0.5rem;
-    }
-
-    /* Load More Button */
-    #loadMoreBtn {
-        display: none;
-        margin: 2rem auto;
-        padding: 0.8rem 2rem;
-        background: var(--neon-green);
-        color: #000;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    #loadMoreBtn:hover {
-        background: #0dc66b;
-        transform: translateY(-2px);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .stellar-header h1 {
-            font-size: 2.5rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-
-        .filter-options select,
-        .search-bar input {
-            min-width: 120px;
-        }
-
-        .card-image-container {
-            height: 180px;
-        }
-
-        .card-info {
-            padding: 1rem;
-        }
-    }
-
-    /* Hidden Cards (after first 12) */
-    .hidden-card {
-        display: none;
-    }
-
-        /* New Tag Styling */
-        .card-tag {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: var(--neon-green);
-        color: var(--deep-space);
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        z-index: 2;
-        box-shadow: 0 2px 10px rgba(15, 244, 122, 0.3);
-    }
-
-    .morph-play {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        background: var(--neon-green);
-        border-radius: 50%;
-        opacity: 0;
-        transition: all 0.4s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 0 30px rgba(15, 244, 122, 0.5);
-        z-index: 2;
-    }
-
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/music.css">
 </head>
 
 <body>
-
     <!-- Floating Particle Background -->
     <div class="particles"></div>
     <main class="container mt-5">
@@ -641,208 +166,182 @@
             <h1>SONIC ARCHIVE</h1>
             <p>Explore the Universe of Sound</p>
         </header>
+        
         <!-- Desktop Filter Section -->
         <section class="hologram-filter d-none d-md-block">
             <div class="filter-section">
                 <div class="filter-options">
                     <select id="album-filter">
                         <option value="">Album</option>
-                        <option value="hybrid">Hybrid Theory</option>
-                        <option value="afterhours">After Hours</option>
-                        <option value="dilchahtahai">Dil Chahta Hai</option>
-                        <option value="dawnfm">Dawn FM</option>
-                        <option value="meteora">Meteora</option>
-                        <option value="rockstar">Rockstar</option>
-                        <option value="blurryface">Blurryface</option>
-                        <option value="starboy">Starboy</option>
+                        <?php foreach($albums as $album): ?>
+                            <option value="<?php echo htmlspecialchars($album['title']); ?>" <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($album['title']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="artist-filter">
                         <option value="">Artist</option>
-                        <option value="lp">Linkin Park</option>
-                        <option value="weeknd">The Weeknd</option>
-                        <option value="sel">Shankar-Ehsaan-Loy</option>
-                        <option value="arr">A.R. Rahman</option>
-                        <option value="top">Twenty One Pilots</option>
+                        <?php foreach($artists as $artist): ?>
+                            <option value="<?php echo htmlspecialchars($artist['name']); ?>" <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($artist['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="year-filter">
                         <option value="">Year</option>
-                        <option value="2000">2000</option>
-                        <option value="2001">2001</option>
-                        <option value="2003">2003</option>
-                        <option value="2011">2011</option>
-                        <option value="2015">2015</option>
-                        <option value="2016">2016</option>
-                        <option value="2020">2020</option>
-                        <option value="2022">2022</option>
-                        <option value="2023">2023</option>
+                        <?php foreach($years as $year): ?>
+                            <option value="<?php echo htmlspecialchars($year['release_year']); ?>" <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($year['release_year']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="genre-filter">
                         <option value="">Genre</option>
-                        <option value="rock">Rock</option>
-                        <option value="rnb">R&B</option>
-                        <option value="pop">Pop</option>
-                        <option value="hiphop">Hip Hop</option>
-                        <option value="alternative">Alternative</option>
-                        <option value="bollywood">Bollywood</option>
+                        <?php foreach($genres as $genre): ?>
+                            <option value="<?php echo htmlspecialchars($genre['name']); ?>" <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($genre['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="language-filter">
                         <option value="">Language</option>
-                        <option value="english">English</option>
-                        <option value="hindi">Hindi</option>
-                        <option value="punjabi">Punjabi</option>
-                        <option value="tamil">Tamil</option>
+                        <?php foreach($languages as $language): ?>
+                            <option value="<?php echo htmlspecialchars($language['name']); ?>" <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($language['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="search-bar">
-                    <input type="text" placeholder="Search for music...">
-                    <button>Search</button>
+                    <input type="text" id="search-input" placeholder="Search for music..." value="<?php echo htmlspecialchars($search_query); ?>">
+                    <button id="search-btn">Search</button>
                 </div>
             </div>
         </section>
+        
         <!-- Offcanvas Filter Section for Mobile -->
         <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileFilter" aria-labelledby="mobileFilterLabel">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title" id="mobileFilterLabel">Filters</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"
-                style="filter: invert(1);"></button>
+                    style="filter: invert(1);"></button>
             </div>
             <div class="offcanvas-body">
                 <div class="filter-options">
                     <select id="album-filter-mobile">
                         <option value="">Album</option>
-                        <option value="hybrid">Hybrid Theory</option>
-                        <option value="afterhours">After Hours</option>
-                        <option value="dilchahtahai">Dil Chahta Hai</option>
-                        <option value="dawnfm">Dawn FM</option>
-                        <option value="meteora">Meteora</option>
-                        <option value="rockstar">Rockstar</option>
-                        <option value="blurryface">Blurryface</option>
-                        <option value="starboy">Starboy</option>
+                        <?php foreach($albums as $album): ?>
+                            <option value="<?php echo htmlspecialchars($album['title']); ?>" <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($album['title']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="artist-filter-mobile">
                         <option value="">Artist</option>
-                        <option value="lp">Linkin Park</option>
-                        <option value="weeknd">The Weeknd</option>
-                        <option value="sel">Shankar-Ehsaan-Loy</option>
-                        <option value="arr">A.R. Rahman</option>
-                        <option value="top">Twenty One Pilots</option>
+                        <?php foreach($artists as $artist): ?>
+                            <option value="<?php echo htmlspecialchars($artist['name']); ?>" <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($artist['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="year-filter-mobile">
                         <option value="">Year</option>
-                        <option value="2000">2000</option>
-                        <option value="2001">2001</option>
-                        <option value="2003">2003</option>
-                        <option value="2011">2011</option>
-                        <option value="2015">2015</option>
-                        <option value="2016">2016</option>
-                        <option value="2020">2020</option>
-                        <option value="2022">2022</option>
-                        <option value="2023">2023</option>
+                        <?php foreach($years as $year): ?>
+                            <option value="<?php echo htmlspecialchars($year['release_year']); ?>" <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($year['release_year']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="genre-filter-mobile">
                         <option value="">Genre</option>
-                        <option value="rock">Rock</option>
-                        <option value="rnb">R&B</option>
-                        <option value="pop">Pop</option>
-                        <option value="hiphop">Hip Hop</option>
-                        <option value="alternative">Alternative</option>
-                        <option value="bollywood">Bollywood</option>
+                        <?php foreach($genres as $genre): ?>
+                            <option value="<?php echo htmlspecialchars($genre['name']); ?>" <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($genre['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select id="language-filter-mobile">
                         <option value="">Language</option>
-                        <option value="english">English</option>
-                        <option value="hindi">Hindi</option>
-                        <option value="punjabi">Punjabi</option>
-                        <option value="tamil">Tamil</option>
+                        <?php foreach($languages as $language): ?>
+                            <option value="<?php echo htmlspecialchars($language['name']); ?>" <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
+                                <?php echo htmlspecialchars($language['name']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="search-bar">
-                    <input type="text" placeholder="Search for music...">
-                    <button>Search</button>
+                    <input type="text" id="search-input-mobile" placeholder="Search for music..." value="<?php echo htmlspecialchars($search_query); ?>">
+                    <button id="search-btn-mobile">Search</button>
                 </div>
             </div>
         </div>
+        
         <!-- Album Grid using Bootstrap's grid system -->
         <section class="album-grid">
-            <div class="row g-4">
-                <!-- First 12 album cards (visible) -->
-                <!-- Album Card 1 -->
-                <div class="col-12 col-md-6 col-lg-3">
+            <div class="row g-4" id="music-grid">
+                <!-- PHP Will populate music cards here -->
+                <?php 
+                $count = 0;
+                foreach($music_items as $item): 
+                    $count++;
+                    $hidden_class = ($count > 12) ? 'hidden-card' : '';
+                ?>
+                <div class="col-12 col-md-6 col-lg-3 music-item <?php echo $hidden_class; ?>"
+                     data-id="<?php echo $item['id']; ?>"
+                     data-title="<?php echo htmlspecialchars($item['title']); ?>"
+                     data-artist="<?php echo htmlspecialchars($item['artist_name']); ?>"
+                     data-album="<?php echo htmlspecialchars($item['album_title']); ?>"
+                     data-year="<?php echo $item['release_year']; ?>"
+                     data-genre="<?php echo htmlspecialchars($item['genre_name']); ?>"
+                     data-language="<?php echo htmlspecialchars($item['language_name']); ?>"
+                     data-file="<?php echo htmlspecialchars($item['file_path']); ?>"
+                     data-duration="<?php echo $item['duration']; ?>">
                     <div class="quantum-card">
                         <div class="card-image-container">
-                            <!-- New Tag -->
+                            <?php if($item['is_new']): ?>
                             <div class="card-tag">New</div>
+                            <?php endif; ?>
                             <div class="morph-play"><i class="fas fa-play"></i></div>
-
-                            <img src="/api/placeholder/400/320" alt="Hybrid Theory" class="card-image">
-                            <div class="morph-play"><i class="fas fa-play"></i></div>
+                            <img src="<?php echo !empty($item['cover_image']) ? '../uploads/' . htmlspecialchars($item['cover_image']) : '../assets/img/default-album.jpg'; ?>" 
+                                 alt="<?php echo htmlspecialchars($item['title']); ?>" class="card-image">
                         </div>
                         <div class="card-info">
-                            <h3 class="card-title">Hybrid Theory</h3>
-                            <div class="card-artist">Linkin Park</div>
+                            <h3 class="card-title"><?php echo htmlspecialchars($item['title']); ?></h3>
+                            <div class="card-artist"><?php echo htmlspecialchars($item['artist_name']); ?></div>
                             <div class="card-meta">
-                                <span>2000 <span class="genre-tag">Rock</span></span>
-                                <span class="card-rating">★★★★☆</span>
+                                <span><?php echo $item['release_year']; ?> 
+                                <span class="genre-tag"><?php echo htmlspecialchars($item['genre_name']); ?></span></span>
+                                <span class="card-rating">
+                                    <?php 
+                                    // Simple algorithm to generate a rating based on plays and likes
+                                    $rating = min(5, ceil(($item['plays'] + $item['likes'] * 2) / 500));
+                                    for($i = 1; $i <= 5; $i++) {
+                                        echo ($i <= $rating) ? '★' : '☆';
+                                    }
+                                    ?>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Album Card 2 -->
-                <div class="col-12 col-md-6 col-lg-3">
-                    <div class="quantum-card">
-                        <div class="card-image-container">
-                            <img src="/api/placeholder/400/320" alt="After Hours" class="card-image">
-                            <div class="new-badge">NEW</div>
-                            <div class="morph-play"><i class="fas fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3 class="card-title">After Hours</h3>
-                            <div class="card-artist">The Weeknd</div>
-                            <div class="card-meta">
-                                <span>2020 <span class="genre-tag">R&B</span></span>
-                                <span class="card-rating">★★★★★</span>
-                            </div>
-                        </div>
+                <?php endforeach; ?>
+                
+                <?php if(count($music_items) == 0): ?>
+                <div class="col-12 text-center">
+                    <div class="no-results-message">
+                        <i class="fas fa-music fa-3x"></i>
+                        <h3>No music tracks found</h3>
+                        <p>Try adjusting your filters or search criteria</p>
                     </div>
                 </div>
-                <!-- Album Card 3 -->
-                <div class="col-12 col-md-6 col-lg-3">
-                    <div class="quantum-card">
-                        <div class="card-image-container">
-                            <img src="/api/placeholder/400/320" alt="Dil Chahta Hai" class="card-image">
-                            <div class="morph-play"><i class="fas fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3 class="card-title">Dil Chahta Hai</h3>
-                            <div class="card-artist">Shankar-Ehsaan-Loy</div>
-                            <div class="card-meta">
-                                <span>2001 <span class="genre-tag">Bollywood</span></span>
-                                <span class="card-rating">★★★★☆</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Album Card 4 -->
-                <div class="col-12 col-md-6 col-lg-3">
-                    <div class="quantum-card">
-                        <div class="card-image-container">
-                            <img src="/api/placeholder/400/320" alt="Dawn FM" class="card-image">
-                            <div class="new-badge">NEW</div>
-                            <div class="morph-play"><i class="fas fa-play"></i></div>
-                        </div>
-                        <div class="card-info">
-                            <h3 class="card-title">Dawn FM</h3>
-                            <div class="card-artist">The Weeknd</div>
-                            <div class="card-meta">
-                                <span>2022 <span class="genre-tag">Pop</span> <span class="genre-tag">R&B</span></span>
-                                <span class="card-rating">★★★★☆</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
+            </div>
         </section>
+        
         <!-- Load More Button -->
+        <?php if(count($music_items) > 12): ?>
         <button id="loadMoreBtn">Load More</button>
+        <?php endif; ?>
 
         <!-- Mobile Filter Toggle Button in Top Right -->
         <button class="d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileFilter"
@@ -854,66 +353,424 @@
                 </svg>
             </div>
         </button>
+        
+        <!-- Fixed Audio Player Section -->
+        <div id="audioPlayerSection" class="audio-player-section">
+            <div class="audio-player-container">
+                <div class="audio-player-info">
+                    <div class="song-thumbnail">
+                        <img id="audioPlayerImage" src="../assets/img/default-album.jpg" alt="Album art">
+                    </div>
+                    <div class="song-details">
+                        <h3 id="audioPlayerSongTitle">Song Title</h3>
+                        <p id="audioPlayerArtist">Artist Name</p>
+                    </div>
+                </div>
 
+                <div class="audio-controls">
+                    <div class="player-controls">
+                        <button class="control-btn" id="prevBtn">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button class="control-btn play-btn" id="playBtn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="control-btn" id="nextBtn">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-options">
+                    <div class="volume-control">
+                        <div class="volume-icon" id="volumeIcon">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+
+                        <div class="volume-slider-container" id="volumeSliderContainer">
+                            <div class="volume-slider" id="volumeSlider">
+                                <div class="volume-fill" id="volumeFill"></div>
+                            </div>
+                            <span class="volume-percentage" id="volumePercentage">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="closePlayerBtn" class="close-player-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Hidden audio element for actual playback -->
+        <audio id="audioElement"></audio>
 
     </main>
+    
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-    // Dynamic Particle Effect (basic implementation)
-    function createParticles() {
-        const container = document.querySelector('.particles');
-        for (let i = 0; i < 100; i++) {
-            const particle = document.createElement('div');
-            particle.style.cssText = `
-          position: absolute;
-          width: 2px;
-          height: 2px;
-          background: var(--neon-green);
-          border-radius: 50%;
-          top: ${Math.random() * 100}vh;
-          left: ${Math.random() * 100}vw;
-          animation: particle-float ${5 + Math.random() * 10}s infinite;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dynamic Particle Effect
+        function createParticles() {
+            const container = document.querySelector('.particles');
+            for (let i = 0; i < 100; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: var(--neon-green);
+                    border-radius: 50%;
+                    top: ${Math.random() * 100}vh;
+                    left: ${Math.random() * 100}vw;
+                    animation: particle-float ${5 + Math.random() * 10}s infinite;
+                `;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+        
+        // CSS keyframes for particle animation
+        const styleSheet = document.createElement('style');
+        styleSheet.type = 'text/css';
+        styleSheet.innerText = `
+            @keyframes particle-float {
+                0% { transform: translateY(0); opacity: 1; }
+                100% { transform: translateY(-100px); opacity: 0; }
+            }
         `;
-            container.appendChild(particle);
+        document.head.appendChild(styleSheet);
+        
+        // Filter Functionality
+        const filterElements = {
+            album: document.getElementById('album-filter'),
+            artist: document.getElementById('artist-filter'),
+            year: document.getElementById('year-filter'),
+            genre: document.getElementById('genre-filter'),
+            language: document.getElementById('language-filter'),
+            albumMobile: document.getElementById('album-filter-mobile'),
+            artistMobile: document.getElementById('artist-filter-mobile'),
+            yearMobile: document.getElementById('year-filter-mobile'),
+            genreMobile: document.getElementById('genre-filter-mobile'),
+            languageMobile: document.getElementById('language-filter-mobile'),
+            searchInput: document.getElementById('search-input'),
+            searchButton: document.getElementById('search-btn'),
+            searchInputMobile: document.getElementById('search-input-mobile'),
+            searchButtonMobile: document.getElementById('search-btn-mobile')
+        };
+        
+        // Apply filters function
+        function applyFilters() {
+            let url = new URL(window.location.href);
+            
+            // Get values from desktop or mobile filters based on viewport
+            const isMobile = window.innerWidth < 768;
+            
+            const albumValue = isMobile ? filterElements.albumMobile.value : filterElements.album.value;
+            const artistValue = isMobile ? filterElements.artistMobile.value : filterElements.artist.value;
+            const yearValue = isMobile ? filterElements.yearMobile.value : filterElements.year.value;
+            const genreValue = isMobile ? filterElements.genreMobile.value : filterElements.genre.value;
+            const languageValue = isMobile ? filterElements.languageMobile.value : filterElements.language.value;
+            const searchValue = isMobile ? filterElements.searchInputMobile.value : filterElements.searchInput.value;
+            
+            // Clear existing parameters
+            url.search = '';
+            
+// Add new parameters
+if (albumValue) url.searchParams.set('album', albumValue);
+if (artistValue) url.searchParams.set('artist', artistValue);
+if (yearValue) url.searchParams.set('year', yearValue);
+if (genreValue) url.searchParams.set('genre', genreValue);
+if (languageValue) url.searchParams.set('language', languageValue);
+if (searchValue) url.searchParams.set('search', searchValue);
+
+// Navigate to new URL
+window.location.href = url.toString();
+}
+
+// Add event listeners to filter elements
+filterElements.album.addEventListener('change', applyFilters);
+filterElements.artist.addEventListener('change', applyFilters);
+filterElements.year.addEventListener('change', applyFilters);
+filterElements.genre.addEventListener('change', applyFilters);
+filterElements.language.addEventListener('change', applyFilters);
+filterElements.albumMobile.addEventListener('change', applyFilters);
+filterElements.artistMobile.addEventListener('change', applyFilters);
+filterElements.yearMobile.addEventListener('change', applyFilters);
+filterElements.genreMobile.addEventListener('change', applyFilters);
+filterElements.languageMobile.addEventListener('change', applyFilters);
+filterElements.searchButton.addEventListener('click', applyFilters);
+filterElements.searchButtonMobile.addEventListener('click', applyFilters);
+
+// Search on Enter key
+filterElements.searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+filterElements.searchInputMobile.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+
+// Sync mobile and desktop filters
+function syncFilters(source, target) {
+    source.addEventListener('change', function() {
+        target.value = source.value;
+    });
+}
+
+syncFilters(filterElements.album, filterElements.albumMobile);
+syncFilters(filterElements.albumMobile, filterElements.album);
+syncFilters(filterElements.artist, filterElements.artistMobile);
+syncFilters(filterElements.artistMobile, filterElements.artist);
+syncFilters(filterElements.year, filterElements.yearMobile);
+syncFilters(filterElements.yearMobile, filterElements.year);
+syncFilters(filterElements.genre, filterElements.genreMobile);
+syncFilters(filterElements.genreMobile, filterElements.genre);
+syncFilters(filterElements.language, filterElements.languageMobile);
+syncFilters(filterElements.languageMobile, filterElements.language);
+syncFilters(filterElements.searchInput, filterElements.searchInputMobile);
+syncFilters(filterElements.searchInputMobile, filterElements.searchInput);
+
+// Audio Player Logic
+const audioPlayer = {
+    element: document.getElementById('audioElement'),
+    container: document.getElementById('audioPlayerSection'),
+    image: document.getElementById('audioPlayerImage'),
+    songTitle: document.getElementById('audioPlayerSongTitle'),
+    artist: document.getElementById('audioPlayerArtist'),
+    playBtn: document.getElementById('playBtn'),
+    prevBtn: document.getElementById('prevBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    progressFill: document.getElementById('progressFill'),
+    progressBar: document.getElementById('progressBar'),
+    currentTimeDisplay: document.getElementById('currentTime'),
+    durationDisplay: document.getElementById('duration'),
+    volumeIcon: document.getElementById('volumeIcon'),
+    volumeSlider: document.getElementById('volumeSlider'),
+    volumeFill: document.getElementById('volumeFill'),
+    volumePercentage: document.getElementById('volumePercentage'),
+    closePlayerBtn: document.getElementById('closePlayerBtn'),
+    
+    currentIndex: 0,
+    playlist: [],
+    isPlaying: false,
+    volume: 0.7, // Default volume (70%)
+    
+    init: function() {
+        this.loadPlaylist();
+        this.attachEventListeners();
+        this.updateVolumeUI();
+    },
+    
+    loadPlaylist: function() {
+        const musicItems = document.querySelectorAll('.music-item');
+        this.playlist = Array.from(musicItems).map(item => ({
+            id: item.dataset.id,
+            title: item.dataset.title,
+            artist: item.dataset.artist,
+            album: item.dataset.album,
+            file: item.dataset.file,
+            duration: item.dataset.duration,
+            image: item.querySelector('img').src
+        }));
+    },
+    
+    attachEventListeners: function() {
+        // Play/pause button
+        this.playBtn.addEventListener('click', () => {
+            this.togglePlay();
+        });
+        
+        // Previous button
+        this.prevBtn.addEventListener('click', () => {
+            this.playPrev();
+        });
+        
+        // Next button
+        this.nextBtn.addEventListener('click', () => {
+            this.playNext();
+        });
+        
+        // Progress bar click
+        this.progressBar.addEventListener('click', (e) => {
+            const percent = e.offsetX / this.progressBar.offsetWidth;
+            this.element.currentTime = percent * this.element.duration;
+            this.updateProgressBar();
+        });
+        
+        // Volume controls
+        this.volumeIcon.addEventListener('click', () => {
+            this.toggleMute();
+        });
+        
+        this.volumeSlider.addEventListener('click', (e) => {
+            const percent = e.offsetX / this.volumeSlider.offsetWidth;
+            this.setVolume(percent);
+        });
+        
+        // Time update
+        this.element.addEventListener('timeupdate', () => {
+            this.updateProgressBar();
+        });
+        
+        // Audio ended
+        this.element.addEventListener('ended', () => {
+            this.playNext();
+        });
+        
+        // Close player
+        this.closePlayerBtn.addEventListener('click', () => {
+            this.pause();
+            this.container.classList.remove('active');
+        });
+        
+        // Load metadata
+        this.element.addEventListener('loadedmetadata', () => {
+            this.updateDurationDisplay();
+        });
+        
+        // Click on music items
+        document.querySelectorAll('.music-item').forEach((item, index) => {
+            item.addEventListener('click', () => {
+                this.currentIndex = index;
+                this.loadAndPlay();
+            });
+        });
+    },
+    
+    loadAndPlay: function() {
+        if (this.playlist.length === 0) return;
+        
+        const current = this.playlist[this.currentIndex];
+        this.element.src = '../' + current.file; // Adjust path as needed
+        this.songTitle.textContent = current.title;
+        this.artist.textContent = current.artist;
+        this.image.src = current.image;
+        
+        this.container.classList.add('active');
+        this.play();
+    },
+    
+    togglePlay: function() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    },
+    
+    play: function() {
+        this.element.play();
+        this.isPlaying = true;
+        this.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    },
+    
+    pause: function() {
+        this.element.pause();
+        this.isPlaying = false;
+        this.playBtn.innerHTML = '<i class="fas fa-play"></i>';
+    },
+    
+    playNext: function() {
+        this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+        this.loadAndPlay();
+    },
+    
+    playPrev: function() {
+        this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+        this.loadAndPlay();
+    },
+    
+    updateProgressBar: function() {
+        const percent = (this.element.currentTime / this.element.duration) * 100 || 0;
+        this.progressFill.style.width = `${percent}%`;
+        this.updateTimeDisplay();
+    },
+    
+    updateTimeDisplay: function() {
+        this.currentTimeDisplay.textContent = this.formatTime(this.element.currentTime);
+    },
+    
+    updateDurationDisplay: function() {
+        this.durationDisplay.textContent = this.formatTime(this.element.duration);
+    },
+    
+    formatTime: function(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    },
+    
+    toggleMute: function() {
+        if (this.element.volume > 0) {
+            this.lastVolume = this.volume;
+            this.setVolume(0);
+        } else {
+            this.setVolume(this.lastVolume || 0.7);
+        }
+    },
+    
+    setVolume: function(volumeLevel) {
+        this.volume = Math.max(0, Math.min(1, volumeLevel));
+        this.element.volume = this.volume;
+        this.updateVolumeUI();
+    },
+    
+    updateVolumeUI: function() {
+        this.volumeFill.style.width = `${this.volume * 100}%`;
+        this.volumePercentage.textContent = `${Math.round(this.volume * 100)}%`;
+        
+        // Update icon based on volume level
+        if (this.volume === 0) {
+            this.volumeIcon.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        } else if (this.volume < 0.5) {
+            this.volumeIcon.innerHTML = '<i class="fas fa-volume-down"></i>';
+        } else {
+            this.volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
         }
     }
-    createParticles();
-    // Make album cards clickable to navigate to album details page
-    document.querySelectorAll('.quantum-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const albumTitle = this.querySelector('.card-title').textContent;
-            window.location.href = `album-details.html?album=${encodeURIComponent(albumTitle)}`;
-        });
-    });
-    // Load More Button Functionality
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-    const hiddenCards = document.querySelectorAll('.hidden-card');
-    if (hiddenCards.length > 0) {
-        window.addEventListener('scroll', () => {
-            const gridBottom = document.querySelector('.album-grid').getBoundingClientRect().bottom;
-            if (gridBottom <= window.innerHeight + 100) {
-                loadMoreBtn.style.display = 'block';
-            }
-        });
-    }
-    loadMoreBtn.addEventListener('click', () => {
-        document.querySelectorAll('.hidden-card').forEach(card => {
+};
+
+// Initialize audio player
+audioPlayer.init();
+
+// Load More Functionality
+const loadMoreBtn = document.getElementById('loadMoreBtn');
+if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() {
+        const hiddenCards = document.querySelectorAll('.hidden-card');
+        const cardsToShow = Array.from(hiddenCards).slice(0, 12);
+        
+        cardsToShow.forEach(card => {
             card.classList.remove('hidden-card');
         });
-        loadMoreBtn.style.display = 'none';
+        
+        if (document.querySelectorAll('.hidden-card').length === 0) {
+            loadMoreBtn.style.display = 'none';
+        }
     });
-    // Optional: CSS keyframes for particle animation
-    const styleSheet = document.createElement('style');
-    styleSheet.type = 'text/css';
-    styleSheet.innerText = `
-      @keyframes particle-float {
-        0% { transform: translateY(0); opacity: 1; }
-        100% { transform: translateY(-100px); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(styleSheet);
-    </script>
-</body>
+}
+});
+</script>
 
-</html>
+<?php
+include '../layout/footer.php';
+?>
