@@ -1,0 +1,281 @@
+:root {
+    --admin-primary: #00c6ff;
+    --admin-secondary: #6e42c1;
+    --admin-success: #00e676;
+    --admin-danger: #ff3d71;
+    --admin-dark: #1e1e2d;
+    --admin-light: #a2a3b7;
+    --admin-background: #0f0f1a;
+    --admin-card-bg: #1e1e2d;
+    --admin-hover: rgba(255, 255, 255, 0.05);
+    --admin-border: rgba(255, 255, 255, 0.05);
+    --admin-border-radius: 12px;
+    --admin-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body {
+    background-color: var(--admin-background);
+    overflow-x: hidden;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: var(--admin-light);
+    margin: 0;
+    padding: 0;
+}
+
+.admin-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-card {
+    background: var(--admin-card-bg);
+    border-radius: var(--admin-border-radius);
+    box-shadow: var(--admin-box-shadow);
+    margin-bottom: 30px;
+    padding: 40px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--admin-border);
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    background-color: var(--admin-dark);
+}
+
+.admin-card h2 {
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 30px;
+    border-bottom: 3px solid var(--admin-border);
+    padding-bottom: 12px;
+    font-size: 1.8rem;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+    display: block;
+}
+
+.form-control,
+/* Style for the select dropdown */
+.form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--admin-border);
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    transition: all 0.3s;
+    width: 100%;
+    appearance: none;
+}
+
+/* Style for options inside select */
+.form-control:focus,
+.form-select option {
+    background-color: #1e1e2d !important;
+    /* Dark background */
+    color: #ffffff !important;
+    /* White text */
+    padding: 10px;
+}
+
+/* Fixes the issue on Firefox */
+.form-select optgroup {
+    background-color: #1e1e2d !important;
+    color: #ffffff !important;
+}
+
+/* Ensure the dropdown background is also dark */
+.form-select:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 198, 255, 0.25);
+    outline: none;
+}
+
+/* WebKit (Chrome, Edge, Safari) fix */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e1e2d;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 198, 255, 0.25);
+    outline: none;
+}
+
+.form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23a2a3b7' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    appearance: none;
+}
+
+/* File Input Specific Style */
+input[type="file"].form-control {
+    padding: 8px;
+}
+
+input[type="file"].form-control::file-selector-button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin-right: 16px;
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+input[type="file"].form-control::file-selector-button:hover {
+    background-color: var(--admin-primary);
+}
+
+/* Checkbox Style */
+.form-check {
+    margin-bottom: 1rem;
+    display: inline-block;
+    align-items: center;
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--admin-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--admin-primary);
+    border-color: var(--admin-primary);
+}
+
+.form-check-label {
+    color: #ffffff;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+/* Thumbnail Preview */
+.thumbnail-preview {
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--admin-border);
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem;
+}
+
+/* Buttons */
+.btn-admin-primary {
+    background-color: var(--admin-primary);
+    border: none;
+    color: var(--admin-dark);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.btn-admin-primary:hover {
+    background-color: var(--admin-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 198, 255, 0.3);
+}
+
+.btn-outline-secondary {
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 1px solid var(--admin-light);
+    color: var(--admin-light);
+    transition: all 0.3s;
+    background-color: transparent;
+    font-weight: 600;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--admin-hover);
+    color: white;
+    border-color: white;
+}
+
+.ms-2 {
+    margin-left: 0.5rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 15px;
+    }
+
+    .admin-card {
+        padding: 20px;
+    }
+
+    .row {
+        margin-right: -10px;
+        margin-left: -10px;
+    }
+
+    .col-md-6,
+    .col-12 {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+
+    .btn-admin-primary,
+    .btn-outline-secondary {
+        width: 100%;
+        margin: 5px 0;
+        text-align: center;
+    }
+
+    .ms-2 {
+        margin-left: 0;
+    }
+}

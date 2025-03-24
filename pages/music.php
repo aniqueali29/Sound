@@ -1,8 +1,9 @@
 <?php
-// Include database connection
-include '../includes/config_db.php'; // Make sure this file exists with DB connection
+ob_start();
 
-// Get filters from URL parameters
+include '../includes/config_db.php'; 
+include '../layout/header.php';
+
 $album_filter = isset($_GET['album']) ? $_GET['album'] : '';
 $artist_filter = isset($_GET['artist']) ? $_GET['artist'] : '';
 $year_filter = isset($_GET['year']) ? $_GET['year'] : '';
@@ -10,9 +11,8 @@ $genre_filter = isset($_GET['genre']) ? $_GET['genre'] : '';
 $language_filter = isset($_GET['language']) ? $_GET['language'] : '';
 $search_query = isset($_GET['search']) ? $_GET['search'] : '';
 
-// Base query to fetch music with all necessary joins
 $sql = "SELECT m.id, m.title, m.file_path, m.duration, m.release_year, m.plays, m.likes, 
-               m.is_new, m.is_featured,
+               m.is_new, m.is_featured, m.thumbnail_path, m.is_active,
                a.name AS artist_name, a.image AS artist_image,
                al.title AS album_title, al.cover_image,
                g.name AS genre_name,
@@ -24,7 +24,10 @@ $sql = "SELECT m.id, m.title, m.file_path, m.duration, m.release_year, m.plays, 
         LEFT JOIN languages l ON m.language_id = l.id
         WHERE m.deleted_at IS NULL";
 
-// Add filters if provided
+function sanitizeFilePath($path) {
+    return str_replace(["../../../", "../../"], "../", $path);
+}
+
 $params = array();
 
 if (!empty($album_filter)) {
@@ -59,13 +62,10 @@ if (!empty($search_query)) {
     $params[] = "%$search_query%";
 }
 
-// Add order by clause
 $sql .= " ORDER BY m.created_at DESC";
 
-// Prepare and execute the statement
 $stmt = $conn->prepare($sql);
 
-// Bind parameters if any
 if (!empty($params)) {
     $types = str_repeat('s', count($params)); // Assuming all params are strings
     $stmt->bind_param($types, ...$params);
@@ -100,11 +100,8 @@ $sql_years = "SELECT DISTINCT release_year FROM music WHERE deleted_at IS NULL O
 $result_years = $conn->query($sql_years);
 $years = $result_years->fetch_all(MYSQLI_ASSOC);
 
-// If no music found, insert demo data if database is empty
 if (count($music_items) == 0 && !isset($_GET['noinsert'])) {
-    // Insert demo artists if they don't exist
 
-    // Get artist IDs
     $stmt = $conn->prepare("SELECT id, name FROM artists WHERE name IN (?, ?, ?, ?, ?)");
     $stmt->bind_param("sssss", $demo_artists[0][0], $demo_artists[1][0], $demo_artists[2][0], $demo_artists[3][0], $demo_artists[4][0]);
     $stmt->execute();
@@ -134,11 +131,11 @@ if (count($music_items) == 0 && !isset($_GET['noinsert'])) {
         $album_ids[$row['title']] = $row['id'];
     }
     
-    // Refresh the page to load the new data
     header("Location: ?noinsert=1");
     exit;
 }
-include '../layout/header.php';
+
+ob_end_flush();
 
 ?>
 
@@ -159,67 +156,103 @@ include '../layout/header.php';
 </head>
 
 <body>
-    <!-- Floating Particle Background -->
+
+    <!-- Second Navbar -->
+    <nav class="navbarstwo">
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li class="nav-item">
+                    <a href="../index.php">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li class="nav-item active">
+                    <a href="music.php">
+                        <i class="fa-solid fa-music"></i>
+                        <span>Music</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="video.php">
+                        <i class="fa-solid fa-video"></i>
+                        <span>Video</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="albums.php">
+                        <i class="fa-solid fa-record-vinyl"></i>
+                        <span>Albums</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="particles"></div>
     <main class="container mt-5">
-        <header class="stellar-header">
-            <h1>SONIC ARCHIVE</h1>
-            <p>Explore the Universe of Sound</p>
-        </header>
-        
-        <!-- Desktop Filter Section -->
-        <section class="hologram-filter d-none d-md-block">
-            <div class="filter-section">
-                <div class="filter-options">
-                    <select id="album-filter">
-                        <option value="">Album</option>
-                        <?php foreach($albums as $album): ?>
-                            <option value="<?php echo htmlspecialchars($album['title']); ?>" <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($album['title']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="artist-filter">
-                        <option value="">Artist</option>
-                        <?php foreach($artists as $artist): ?>
-                            <option value="<?php echo htmlspecialchars($artist['name']); ?>" <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($artist['name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="year-filter">
-                        <option value="">Year</option>
-                        <?php foreach($years as $year): ?>
-                            <option value="<?php echo htmlspecialchars($year['release_year']); ?>" <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($year['release_year']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="genre-filter">
-                        <option value="">Genre</option>
-                        <?php foreach($genres as $genre): ?>
-                            <option value="<?php echo htmlspecialchars($genre['name']); ?>" <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($genre['name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="language-filter">
-                        <option value="">Language</option>
-                        <?php foreach($languages as $language): ?>
-                            <option value="<?php echo htmlspecialchars($language['name']); ?>" <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($language['name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Search for music..." value="<?php echo htmlspecialchars($search_query); ?>">
-                    <button id="search-btn">Search</button>
-                </div>
+        <h1 class="main-title">MUSIC ARCHIVE</h1>
+        <p class="subtitle">Explore the Universe of Sound</p>
+        <section class="search-container d-none d-md-block">
+            <div class="filter-row">
+                <select class="filter-dropdown" id="album-filter">
+                    <option value="">Album</option>
+                    <?php foreach($albums as $album): ?>
+                    <option value="<?php echo htmlspecialchars($album['title']); ?>"
+                        <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
+                        <?php echo htmlspecialchars($album['title']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select class="filter-dropdown" id="artist-filter">
+                    <option value="">Artist</option>
+                    <?php foreach($artists as $artist): ?>
+                    <option value="<?php echo htmlspecialchars($artist['name']); ?>"
+                        <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
+                        <?php echo htmlspecialchars($artist['name']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select class="filter-dropdown" id="year-filter">
+                    <option value="">Year</option>
+                    <?php foreach($years as $year): ?>
+                    <option value="<?php echo htmlspecialchars($year['release_year']); ?>"
+                        <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
+                        <?php echo htmlspecialchars($year['release_year']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select class="filter-dropdown" id="genre-filter">
+                    <option value="">Genre</option>
+                    <?php foreach($genres as $genre): ?>
+                    <option value="<?php echo htmlspecialchars($genre['name']); ?>"
+                        <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
+                        <?php echo htmlspecialchars($genre['name']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+
+                <select class="filter-dropdown" id="language-filter">
+                    <option value="">Language</option>
+                    <?php foreach($languages as $language): ?>
+                    <option value="<?php echo htmlspecialchars($language['name']); ?>"
+                        <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
+                        <?php echo htmlspecialchars($language['name']); ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <input type="text" class="form-control search-input" id="search-input" placeholder="Search for music..."
+                    value="<?php echo htmlspecialchars($search_query); ?>">
+                <button class="search-button" id="search-btn" type="button">Search</button>
             </div>
         </section>
-        
-        <!-- Offcanvas Filter Section for Mobile -->
+
         <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileFilter" aria-labelledby="mobileFilterLabel">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title" id="mobileFilterLabel">Filters</h5>
@@ -231,101 +264,170 @@ include '../layout/header.php';
                     <select id="album-filter-mobile">
                         <option value="">Album</option>
                         <?php foreach($albums as $album): ?>
-                            <option value="<?php echo htmlspecialchars($album['title']); ?>" <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($album['title']); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($album['title']); ?>"
+                            <?php echo ($album_filter == $album['title'] ? 'selected' : ''); ?>>
+                            <?php echo htmlspecialchars($album['title']); ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                     <select id="artist-filter-mobile">
                         <option value="">Artist</option>
                         <?php foreach($artists as $artist): ?>
-                            <option value="<?php echo htmlspecialchars($artist['name']); ?>" <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($artist['name']); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($artist['name']); ?>"
+                            <?php echo ($artist_filter == $artist['name'] ? 'selected' : ''); ?>>
+                            <?php echo htmlspecialchars($artist['name']); ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                     <select id="year-filter-mobile">
                         <option value="">Year</option>
                         <?php foreach($years as $year): ?>
-                            <option value="<?php echo htmlspecialchars($year['release_year']); ?>" <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($year['release_year']); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($year['release_year']); ?>"
+                            <?php echo ($year_filter == $year['release_year'] ? 'selected' : ''); ?>>
+                            <?php echo htmlspecialchars($year['release_year']); ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                     <select id="genre-filter-mobile">
                         <option value="">Genre</option>
                         <?php foreach($genres as $genre): ?>
-                            <option value="<?php echo htmlspecialchars($genre['name']); ?>" <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($genre['name']); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($genre['name']); ?>"
+                            <?php echo ($genre_filter == $genre['name'] ? 'selected' : ''); ?>>
+                            <?php echo htmlspecialchars($genre['name']); ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                     <select id="language-filter-mobile">
                         <option value="">Language</option>
                         <?php foreach($languages as $language): ?>
-                            <option value="<?php echo htmlspecialchars($language['name']); ?>" <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
-                                <?php echo htmlspecialchars($language['name']); ?>
-                            </option>
+                        <option value="<?php echo htmlspecialchars($language['name']); ?>"
+                            <?php echo ($language_filter == $language['name'] ? 'selected' : ''); ?>>
+                            <?php echo htmlspecialchars($language['name']); ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="search-bar">
-                    <input type="text" id="search-input-mobile" placeholder="Search for music..." value="<?php echo htmlspecialchars($search_query); ?>">
+                    <input type="text" id="search-input-mobile" placeholder="Search for music..."
+                        value="<?php echo htmlspecialchars($search_query); ?>">
                     <button id="search-btn-mobile">Search</button>
                 </div>
             </div>
         </div>
-        
-        <!-- Album Grid using Bootstrap's grid system -->
+
         <section class="album-grid">
+            <h2 class="section-title">New Releases</h2>
             <div class="row g-4" id="music-grid">
-                <!-- PHP Will populate music cards here -->
                 <?php 
-                $count = 0;
-                foreach($music_items as $item): 
-                    $count++;
-                    $hidden_class = ($count > 12) ? 'hidden-card' : '';
-                ?>
+                    $count = 0;
+                    foreach($music_items as $item): 
+                        if(empty($item['is_active'])) continue;
+                        
+                        $count++;
+                        $hidden_class = ($count > 12) ? 'hidden-card' : '';
+                    ?>
                 <div class="col-12 col-md-6 col-lg-3 music-item <?php echo $hidden_class; ?>"
-                     data-id="<?php echo $item['id']; ?>"
-                     data-title="<?php echo htmlspecialchars($item['title']); ?>"
-                     data-artist="<?php echo htmlspecialchars($item['artist_name']); ?>"
-                     data-album="<?php echo htmlspecialchars($item['album_title']); ?>"
-                     data-year="<?php echo $item['release_year']; ?>"
-                     data-genre="<?php echo htmlspecialchars($item['genre_name']); ?>"
-                     data-language="<?php echo htmlspecialchars($item['language_name']); ?>"
-                     data-file="<?php echo htmlspecialchars($item['file_path']); ?>"
-                     data-duration="<?php echo $item['duration']; ?>">
+                    data-id="<?php echo $item['id']; ?>" data-title="<?php echo htmlspecialchars($item['title']); ?>"
+                    data-artist="<?php echo htmlspecialchars($item['artist_name']); ?>"
+                    data-album="<?php echo htmlspecialchars($item['album_title']); ?>"
+                    data-year="<?php echo $item['release_year']; ?>"
+                    data-genre="<?php echo htmlspecialchars($item['genre_name']); ?>"
+                    data-language="<?php echo htmlspecialchars($item['language_name']); ?>"
+                    data-file="<?php echo htmlspecialchars(str_replace(["../../../", "../../"], "../", $item['file_path'])); ?>"
+                    data-duration="<?php echo $item['duration']; ?>">
                     <div class="quantum-card">
                         <div class="card-image-container">
                             <?php if($item['is_new']): ?>
                             <div class="card-tag">New</div>
                             <?php endif; ?>
                             <div class="morph-play"><i class="fas fa-play"></i></div>
-                            <img src="<?php echo !empty($item['cover_image']) ? '../uploads/' . htmlspecialchars($item['cover_image']) : '../assets/img/default-album.jpg'; ?>" 
-                                 alt="<?php echo htmlspecialchars($item['title']); ?>" class="card-image">
+                            <img src="<?php 
+                                if(!empty($item['cover_image'])) {
+                                    echo  htmlspecialchars(str_replace(["../../../", "../../"], "../", '../uploads/albums/covers/' . $item['cover_image']));
+                                } elseif(!empty($item['thumbnail_path'])) {
+                                    echo htmlspecialchars(str_replace(["../../../", "../../"], "../", $item['thumbnail_path']));
+                                } else {
+                                    echo '../assets/img/default-album.jpg';
+                                }
+                            ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" class="card-image">
+                            <!-- Add Favorite Button -->
+                            <?php
+                                // Check if user is logged in
+                                $is_favorite = false;
+                                if(isset($_SESSION['user_id'])) {
+                                    $user_id = $_SESSION['user_id'];
+                                    $music_id = $item['id'];
+                                    
+                                    // Check if this track is in user's favorites
+                                    $fav_query = "SELECT id FROM favorites WHERE user_id = ? AND music_id = ?";
+                                    $fav_stmt = $conn->prepare($fav_query);
+                                    $fav_stmt->bind_param("ii", $user_id, $music_id);
+                                    $fav_stmt->execute();
+                                    $fav_result = $fav_stmt->get_result();
+                                    $is_favorite = $fav_result->num_rows > 0;
+                                }
+                            ?>
+                            <button class="track-btn track-fav-btn <?php echo $is_favorite ? 'active' : ''; ?>"
+                                data-music-id="<?php echo $item['id']; ?>">
+                                <i class="<?php echo $is_favorite ? 'fas' : 'far'; ?> fa-heart"></i>
+                            </button>
                         </div>
                         <div class="card-info">
                             <h3 class="card-title"><?php echo htmlspecialchars($item['title']); ?></h3>
                             <div class="card-artist"><?php echo htmlspecialchars($item['artist_name']); ?></div>
                             <div class="card-meta">
-                                <span><?php echo $item['release_year']; ?> 
-                                <span class="genre-tag"><?php echo htmlspecialchars($item['genre_name']); ?></span></span>
+                                <span><?php echo $item['release_year']; ?>
+                                    <span class="genre-tag"><?php echo htmlspecialchars($item['genre_name']); ?></span>
+                                </span>
                                 <span class="card-rating">
-                                    <?php 
-                                    // Simple algorithm to generate a rating based on plays and likes
-                                    $rating = min(5, ceil(($item['plays'] + $item['likes'] * 2) / 500));
-                                    for($i = 1; $i <= 5; $i++) {
-                                        echo ($i <= $rating) ? '★' : '☆';
-                                    }
+                                    <?php
+                                        $music_id = $item['id']; 
+                                        $rating_query = "SELECT AVG(rating) as average_rating FROM ratings WHERE item_id = ? AND item_type = 'music'";
+                                        $stmt = $conn->prepare($rating_query);
+                                        $stmt->bind_param("i", $music_id);
+                                        $stmt->execute();
+                                        $result = $stmt->get_result();
+                                        $rating_data = $result->fetch_assoc();
+                                        
+                                        $average_rating = $rating_data['average_rating'] ?? 0;
+                                        $average_rating = round($average_rating, 1); 
+
+                                        for ($i = 1; $i <= 5; $i++) {
+                                            if ($i <= $average_rating) {
+                                                echo '★';
+                                            } elseif ($i - 0.5 <= $average_rating) {
+                                                echo '½'; 
+                                            } else {
+                                                echo '☆'; 
+                                            }
+                                        }
                                     ?>
                                 </span>
+                            </div>
+                            <div class="more-options">
+                                <button class="more-btn" data-bs-toggle="modal" data-bs-target="#musicDetailsModal"
+                                    data-id="<?php echo $item['id']; ?>"
+                                    data-title="<?php echo htmlspecialchars($item['title']); ?>"
+                                    data-artist="<?php echo htmlspecialchars($item['artist_name']); ?>"
+                                    data-album="<?php echo htmlspecialchars($item['album_title']); ?>" data-cover="<?php 
+                                    if(!empty($item['cover_image'])) {
+                                        echo  htmlspecialchars(str_replace(["../../../", "../../"], "../", '../uploads/albums/covers/' . $item['cover_image']));
+                                    } elseif(!empty($item['thumbnail_path'])) {
+                                        echo htmlspecialchars(str_replace(["../../../", "../../"], "../", $item['thumbnail_path']));
+                                    } else {
+                                        echo '../assets/img/default-album.jpg';
+                                    }
+                                    ?>">
+
+
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
-                
+
                 <?php if(count($music_items) == 0): ?>
                 <div class="col-12 text-center">
                     <div class="no-results-message">
@@ -337,13 +439,13 @@ include '../layout/header.php';
                 <?php endif; ?>
             </div>
         </section>
-        
+
         <!-- Load More Button -->
         <?php if(count($music_items) > 12): ?>
         <button id="loadMoreBtn">Load More</button>
         <?php endif; ?>
 
-        <!-- Mobile Filter Toggle Button in Top Right -->
+        <!-- Mobile Filter Toggle Button -->
         <button class="d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileFilter"
             aria-controls="mobileFilter">
             <div class="filter-icon">
@@ -353,7 +455,7 @@ include '../layout/header.php';
                 </svg>
             </div>
         </button>
-        
+
         <!-- Fixed Audio Player Section -->
         <div id="audioPlayerSection" class="audio-player-section">
             <div class="audio-player-container">
@@ -414,363 +516,173 @@ include '../layout/header.php';
                 </button>
             </div>
         </div>
-        
+
         <!-- Hidden audio element for actual playback -->
         <audio id="audioElement"></audio>
 
+
+        <!-- Music Details Modal -->
+        <div class="modal fade" id="musicDetailsModal" tabindex="-1" aria-labelledby="musicDetailsModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="musicDetailsModalLabel">Music Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="music-details-container">
+                            <div class="music-details-header">
+                                <div class="music-details-image">
+                                    <img id="modalCoverImage" src="../assets/img/default-album.jpg" alt="Album Cover">
+                                </div>
+                                <div class="music-details-info">
+                                    <h3 id="modalSongTitle" class="modal-song-title">Song Title</h3>
+                                    <p id="modalArtistName" class="modal-artist-name">Artist Name</p>
+                                    <p id="modalAlbumTitle" class="modal-album-title">Album Name</p>
+                                    <div class="modal-rating-summary">
+                                        <div class="rating-average">
+                                            <div class="rating-stars" id="modalRatingStars">
+                                                <!-- Stars will be populated by JavaScript -->
+                                            </div>
+                                            <div class="rating-count" id="modalRatingCount">
+                                                <!-- Rating count will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-primary" id="rateReviewBtn" data-music-id="">Rate &
+                                            Review</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="reviews-section">
+                                <h4>User Reviews</h4>
+                                <div class="reviews-container" id="reviewsContainer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate & Review Modal -->
+        <div class="modal fade" id="rateReviewModal" tabindex="-1" aria-labelledby="rateReviewModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rateReviewModalLabel">Rate & Review</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="rate-review-form">
+                            <form id="rateReviewForm">
+                                <input type="hidden" id="music_id" name="music_id">
+
+                                <div class="form-group mb-4">
+                                    <label for="ratingStars" class="form-label">Your Rating</label>
+                                    <div class="star-rating">
+                                        <i class="far fa-star" data-rating="1"></i>
+                                        <i class="far fa-star" data-rating="2"></i>
+                                        <i class="far fa-star" data-rating="3"></i>
+                                        <i class="far fa-star" data-rating="4"></i>
+                                        <i class="far fa-star" data-rating="5"></i>
+                                    </div>
+                                    <input type="hidden" id="ratingValue" name="rating" value="0">
+                                </div>
+
+                                <div class="form-group mb-4">
+                                    <label for="reviewText" class="form-label">Your Review</label>
+                                    <textarea class="form-control" id="reviewText" name="review" rows="4"
+                                        placeholder="Share your thoughts about this song..."></textarea>
+                                </div>
+
+                                <div class="form-group text-center">
+                                    <button type="submit" class="btn btn-primary submit-review-btn">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
-    
+    <?php require_once '../layout/footer.php';?>
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Dynamic Particle Effect
-        function createParticles() {
-            const container = document.querySelector('.particles');
-            for (let i = 0; i < 100; i++) {
-                const particle = document.createElement('div');
-                particle.style.cssText = `
-                    position: absolute;
-                    width: 2px;
-                    height: 2px;
-                    background: var(--neon-green);
-                    border-radius: 50%;
-                    top: ${Math.random() * 100}vh;
-                    left: ${Math.random() * 100}vw;
-                    animation: particle-float ${5 + Math.random() * 10}s infinite;
-                `;
-                container.appendChild(particle);
+    // Add track favorite functionality
+    const trackFavButtons = document.querySelectorAll('.track-fav-btn');
+    trackFavButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.classList.contains('loading')) {
+                this.classList.add('loading');
+                const musicId = this.getAttribute('data-music-id');
+                const isActive = this.classList.contains('active');
+                toggleFavorite(musicId, 'music', !isActive, this);
             }
-        }
-        createParticles();
-        
-        // CSS keyframes for particle animation
-        const styleSheet = document.createElement('style');
-        styleSheet.type = 'text/css';
-        styleSheet.innerText = `
-            @keyframes particle-float {
-                0% { transform: translateY(0); opacity: 1; }
-                100% { transform: translateY(-100px); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(styleSheet);
-        
-        // Filter Functionality
-        const filterElements = {
-            album: document.getElementById('album-filter'),
-            artist: document.getElementById('artist-filter'),
-            year: document.getElementById('year-filter'),
-            genre: document.getElementById('genre-filter'),
-            language: document.getElementById('language-filter'),
-            albumMobile: document.getElementById('album-filter-mobile'),
-            artistMobile: document.getElementById('artist-filter-mobile'),
-            yearMobile: document.getElementById('year-filter-mobile'),
-            genreMobile: document.getElementById('genre-filter-mobile'),
-            languageMobile: document.getElementById('language-filter-mobile'),
-            searchInput: document.getElementById('search-input'),
-            searchButton: document.getElementById('search-btn'),
-            searchInputMobile: document.getElementById('search-input-mobile'),
-            searchButtonMobile: document.getElementById('search-btn-mobile')
-        };
-        
-        // Apply filters function
-        function applyFilters() {
-            let url = new URL(window.location.href);
-            
-            // Get values from desktop or mobile filters based on viewport
-            const isMobile = window.innerWidth < 768;
-            
-            const albumValue = isMobile ? filterElements.albumMobile.value : filterElements.album.value;
-            const artistValue = isMobile ? filterElements.artistMobile.value : filterElements.artist.value;
-            const yearValue = isMobile ? filterElements.yearMobile.value : filterElements.year.value;
-            const genreValue = isMobile ? filterElements.genreMobile.value : filterElements.genre.value;
-            const languageValue = isMobile ? filterElements.languageMobile.value : filterElements.language.value;
-            const searchValue = isMobile ? filterElements.searchInputMobile.value : filterElements.searchInput.value;
-            
-            // Clear existing parameters
-            url.search = '';
-            
-// Add new parameters
-if (albumValue) url.searchParams.set('album', albumValue);
-if (artistValue) url.searchParams.set('artist', artistValue);
-if (yearValue) url.searchParams.set('year', yearValue);
-if (genreValue) url.searchParams.set('genre', genreValue);
-if (languageValue) url.searchParams.set('language', languageValue);
-if (searchValue) url.searchParams.set('search', searchValue);
-
-// Navigate to new URL
-window.location.href = url.toString();
-}
-
-// Add event listeners to filter elements
-filterElements.album.addEventListener('change', applyFilters);
-filterElements.artist.addEventListener('change', applyFilters);
-filterElements.year.addEventListener('change', applyFilters);
-filterElements.genre.addEventListener('change', applyFilters);
-filterElements.language.addEventListener('change', applyFilters);
-filterElements.albumMobile.addEventListener('change', applyFilters);
-filterElements.artistMobile.addEventListener('change', applyFilters);
-filterElements.yearMobile.addEventListener('change', applyFilters);
-filterElements.genreMobile.addEventListener('change', applyFilters);
-filterElements.languageMobile.addEventListener('change', applyFilters);
-filterElements.searchButton.addEventListener('click', applyFilters);
-filterElements.searchButtonMobile.addEventListener('click', applyFilters);
-
-// Search on Enter key
-filterElements.searchInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        applyFilters();
-    }
-});
-filterElements.searchInputMobile.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        applyFilters();
-    }
-});
-
-// Sync mobile and desktop filters
-function syncFilters(source, target) {
-    source.addEventListener('change', function() {
-        target.value = source.value;
+        });
     });
-}
 
-syncFilters(filterElements.album, filterElements.albumMobile);
-syncFilters(filterElements.albumMobile, filterElements.album);
-syncFilters(filterElements.artist, filterElements.artistMobile);
-syncFilters(filterElements.artistMobile, filterElements.artist);
-syncFilters(filterElements.year, filterElements.yearMobile);
-syncFilters(filterElements.yearMobile, filterElements.year);
-syncFilters(filterElements.genre, filterElements.genreMobile);
-syncFilters(filterElements.genreMobile, filterElements.genre);
-syncFilters(filterElements.language, filterElements.languageMobile);
-syncFilters(filterElements.languageMobile, filterElements.language);
-syncFilters(filterElements.searchInput, filterElements.searchInputMobile);
-syncFilters(filterElements.searchInputMobile, filterElements.searchInput);
+    // Toggle favorite function
+    function toggleFavorite(itemId, itemType, addToFavorite, buttonElement) {
+        // Ensure user is logged in
+        const isLoggedIn = <?= isset($_SESSION['user_id']) ? 'true' : 'false' ?>;
 
-// Audio Player Logic
-const audioPlayer = {
-    element: document.getElementById('audioElement'),
-    container: document.getElementById('audioPlayerSection'),
-    image: document.getElementById('audioPlayerImage'),
-    songTitle: document.getElementById('audioPlayerSongTitle'),
-    artist: document.getElementById('audioPlayerArtist'),
-    playBtn: document.getElementById('playBtn'),
-    prevBtn: document.getElementById('prevBtn'),
-    nextBtn: document.getElementById('nextBtn'),
-    progressFill: document.getElementById('progressFill'),
-    progressBar: document.getElementById('progressBar'),
-    currentTimeDisplay: document.getElementById('currentTime'),
-    durationDisplay: document.getElementById('duration'),
-    volumeIcon: document.getElementById('volumeIcon'),
-    volumeSlider: document.getElementById('volumeSlider'),
-    volumeFill: document.getElementById('volumeFill'),
-    volumePercentage: document.getElementById('volumePercentage'),
-    closePlayerBtn: document.getElementById('closePlayerBtn'),
-    
-    currentIndex: 0,
-    playlist: [],
-    isPlaying: false,
-    volume: 0.7, // Default volume (70%)
-    
-    init: function() {
-        this.loadPlaylist();
-        this.attachEventListeners();
-        this.updateVolumeUI();
-    },
-    
-    loadPlaylist: function() {
-        const musicItems = document.querySelectorAll('.music-item');
-        this.playlist = Array.from(musicItems).map(item => ({
-            id: item.dataset.id,
-            title: item.dataset.title,
-            artist: item.dataset.artist,
-            album: item.dataset.album,
-            file: item.dataset.file,
-            duration: item.dataset.duration,
-            image: item.querySelector('img').src
-        }));
-    },
-    
-    attachEventListeners: function() {
-        // Play/pause button
-        this.playBtn.addEventListener('click', () => {
-            this.togglePlay();
-        });
-        
-        // Previous button
-        this.prevBtn.addEventListener('click', () => {
-            this.playPrev();
-        });
-        
-        // Next button
-        this.nextBtn.addEventListener('click', () => {
-            this.playNext();
-        });
-        
-        // Progress bar click
-        this.progressBar.addEventListener('click', (e) => {
-            const percent = e.offsetX / this.progressBar.offsetWidth;
-            this.element.currentTime = percent * this.element.duration;
-            this.updateProgressBar();
-        });
-        
-        // Volume controls
-        this.volumeIcon.addEventListener('click', () => {
-            this.toggleMute();
-        });
-        
-        this.volumeSlider.addEventListener('click', (e) => {
-            const percent = e.offsetX / this.volumeSlider.offsetWidth;
-            this.setVolume(percent);
-        });
-        
-        // Time update
-        this.element.addEventListener('timeupdate', () => {
-            this.updateProgressBar();
-        });
-        
-        // Audio ended
-        this.element.addEventListener('ended', () => {
-            this.playNext();
-        });
-        
-        // Close player
-        this.closePlayerBtn.addEventListener('click', () => {
-            this.pause();
-            this.container.classList.remove('active');
-        });
-        
-        // Load metadata
-        this.element.addEventListener('loadedmetadata', () => {
-            this.updateDurationDisplay();
-        });
-        
-        // Click on music items
-        document.querySelectorAll('.music-item').forEach((item, index) => {
-            item.addEventListener('click', () => {
-                this.currentIndex = index;
-                this.loadAndPlay();
+        if (!isLoggedIn) {
+            alert('Please log in to add to favorites.');
+            buttonElement.classList.remove('loading');
+            return;
+        }
+
+        fetch('../includes/toggle_favorite.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `itemId=${itemId}&itemType=${itemType}&addToFavorite=${addToFavorite ? 1 : 0}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                buttonElement.classList.remove('loading');
+
+                if (data.success) {
+                    if (itemType === 'album') {
+                        const icon = buttonElement.querySelector('i');
+                        const textSpan = buttonElement.querySelector('span');
+
+                        if (addToFavorite) {
+                            icon.className = 'fas fa-heart';
+                            textSpan.textContent = 'Remove Favorite';
+                            buttonElement.setAttribute('data-is-favorite', '1');
+                        } else {
+                            icon.className = 'far fa-heart';
+                            textSpan.textContent = 'Add Favorite';
+                            buttonElement.setAttribute('data-is-favorite', '0');
+                        }
+                    } else if (itemType === 'music') {
+                        if (addToFavorite) {
+                            buttonElement.classList.add('active');
+                            buttonElement.innerHTML = '<i class="fas fa-heart"></i>';
+                        } else {
+                            buttonElement.classList.remove('active');
+                            buttonElement.innerHTML = '<i class="far fa-heart"></i>';
+                        }
+                    }
+                } else {
+                    alert(data.message || 'Error updating favorite status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                buttonElement.classList.remove('loading');
+                alert('An error occurred while updating favorites.');
             });
-        });
-    },
-    
-    loadAndPlay: function() {
-        if (this.playlist.length === 0) return;
-        
-        const current = this.playlist[this.currentIndex];
-        this.element.src = '../' + current.file; // Adjust path as needed
-        this.songTitle.textContent = current.title;
-        this.artist.textContent = current.artist;
-        this.image.src = current.image;
-        
-        this.container.classList.add('active');
-        this.play();
-    },
-    
-    togglePlay: function() {
-        if (this.isPlaying) {
-            this.pause();
-        } else {
-            this.play();
-        }
-    },
-    
-    play: function() {
-        this.element.play();
-        this.isPlaying = true;
-        this.playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-    },
-    
-    pause: function() {
-        this.element.pause();
-        this.isPlaying = false;
-        this.playBtn.innerHTML = '<i class="fas fa-play"></i>';
-    },
-    
-    playNext: function() {
-        this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
-        this.loadAndPlay();
-    },
-    
-    playPrev: function() {
-        this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
-        this.loadAndPlay();
-    },
-    
-    updateProgressBar: function() {
-        const percent = (this.element.currentTime / this.element.duration) * 100 || 0;
-        this.progressFill.style.width = `${percent}%`;
-        this.updateTimeDisplay();
-    },
-    
-    updateTimeDisplay: function() {
-        this.currentTimeDisplay.textContent = this.formatTime(this.element.currentTime);
-    },
-    
-    updateDurationDisplay: function() {
-        this.durationDisplay.textContent = this.formatTime(this.element.duration);
-    },
-    
-    formatTime: function(seconds) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-    },
-    
-    toggleMute: function() {
-        if (this.element.volume > 0) {
-            this.lastVolume = this.volume;
-            this.setVolume(0);
-        } else {
-            this.setVolume(this.lastVolume || 0.7);
-        }
-    },
-    
-    setVolume: function(volumeLevel) {
-        this.volume = Math.max(0, Math.min(1, volumeLevel));
-        this.element.volume = this.volume;
-        this.updateVolumeUI();
-    },
-    
-    updateVolumeUI: function() {
-        this.volumeFill.style.width = `${this.volume * 100}%`;
-        this.volumePercentage.textContent = `${Math.round(this.volume * 100)}%`;
-        
-        // Update icon based on volume level
-        if (this.volume === 0) {
-            this.volumeIcon.innerHTML = '<i class="fas fa-volume-mute"></i>';
-        } else if (this.volume < 0.5) {
-            this.volumeIcon.innerHTML = '<i class="fas fa-volume-down"></i>';
-        } else {
-            this.volumeIcon.innerHTML = '<i class="fas fa-volume-up"></i>';
-        }
     }
-};
+    </script>
+    <script src="../js/music.js"></script>
+</body>
 
-// Initialize audio player
-audioPlayer.init();
-
-// Load More Functionality
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
-        const hiddenCards = document.querySelectorAll('.hidden-card');
-        const cardsToShow = Array.from(hiddenCards).slice(0, 12);
-        
-        cardsToShow.forEach(card => {
-            card.classList.remove('hidden-card');
-        });
-        
-        if (document.querySelectorAll('.hidden-card').length === 0) {
-            loadMoreBtn.style.display = 'none';
-        }
-    });
-}
-});
-</script>
-
-<?php
-include '../layout/footer.php';
-?>
+</html>
